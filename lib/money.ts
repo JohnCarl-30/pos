@@ -28,14 +28,34 @@ function validGrouping(whole: string): boolean {
 export function parseMoney(input: string, currency: string): number | null {
   const digits = currencyDigits(currency);
   const trimmed = input.trim();
-  const negative = trimmed.startsWith("-");
-  const body = trimmed.replace(/^-/, "").replace(/[^\d.,]/g, "");
+
+  const stripped = trimmed.replace(/^[^\d.,\-]+/, "").replace(/[^\d.,\-]+$/, "");
+  const negative = stripped.startsWith("-");
+  const minusCount = (stripped.match(/-/g) || []).length;
+  if (minusCount > 1) return null;
+
+  const body = stripped.replace(/^-/, "");
   if (!/\d/.test(body)) return null;
 
-  const lastSeparator = Math.max(body.lastIndexOf("."), body.lastIndexOf(","));
-  const tail = lastSeparator === -1 ? "" : body.slice(lastSeparator + 1);
-  const tailIsDecimal =
-    lastSeparator !== -1 && digits > 0 && tail.length <= digits;
+  const invalidCharsMatch = body.match(/[^\d.,]/);
+  if (invalidCharsMatch) return null;
+
+  const lastDot = body.lastIndexOf(".");
+  const lastComma = body.lastIndexOf(",");
+  const lastSeparator = Math.max(lastDot, lastComma);
+
+  let tail = "";
+  let tailIsDecimal = false;
+
+  if (lastSeparator !== -1) {
+    tail = body.slice(lastSeparator + 1);
+
+    if (digits === 3) {
+      tailIsDecimal = lastDot === lastSeparator && tail.length <= digits;
+    } else {
+      tailIsDecimal = tail.length <= digits && digits > 0;
+    }
+  }
 
   const whole = tailIsDecimal ? body.slice(0, lastSeparator) : body;
   const fraction = tailIsDecimal ? tail : "";

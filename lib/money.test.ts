@@ -47,4 +47,19 @@ describe("parseMoney", () => {
     expect(parseMoney("0.001", "USD")).toBeNull();
     expect(parseMoney("12,34", "JPY")).toBeNull();
   });
+
+  it("handles 3-digit currencies with fixed decimal separator", () => {
+    expect(parseMoney("1,234", "KWD")).toBe(1234000);
+    expect(parseMoney("1.234", "KWD")).toBe(1234);
+    expect(parseMoney("1,234.5", "KWD")).toBe(1234500);
+  });
+
+  it("rejects multiple minus signs and embedded invalid characters", () => {
+    expect(parseMoney("--12", "USD")).toBeNull();
+    expect(parseMoney("1x,234", "USD")).toBeNull();
+  });
+
+  it("strips currency symbols and whitespace at edges", () => {
+    expect(parseMoney("USD 12.50", "USD")).toBe(1250);
+  });
 });
