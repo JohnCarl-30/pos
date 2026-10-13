@@ -13,10 +13,11 @@ export async function GET(request: NextRequest) {
 
   const { error } = code
     ? await supabase.auth.exchangeCodeForSession(code)
-    : tokenHash && type
+    : tokenHash && type === "recovery"
       ? await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
       : { error: new Error("missing token") };
 
   const target = error ? "/login?error=link-expired" : next;
-  return NextResponse.redirect(new URL(target, request.url));
+  const origin = `${request.nextUrl.protocol}//${request.headers.get("host") ?? request.nextUrl.host}`;
+  return NextResponse.redirect(new URL(target, origin));
 }
