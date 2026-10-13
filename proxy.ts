@@ -24,10 +24,17 @@ export async function proxy(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const signedIn = Boolean(data?.claims?.sub);
 
-  let setupComplete = request.cookies.get(SETUP_COOKIE)?.value === "1";
+  const setupCookie = request.cookies.get(SETUP_COOKIE)?.value;
+  let setupComplete = setupCookie === "1";
+  let confirmedSetupComplete = setupComplete;
   if (!setupComplete) {
-    const { data: status } = await supabase.rpc("setup_status");
-    setupComplete = status === true;
+    const { data: status, error } = await supabase.rpc("setup_status");
+    if (error) {
+      setupComplete = true;
+    } else {
+      setupComplete = status === true;
+      confirmedSetupComplete = setupComplete;
+    }
   }
 
   const decision = decideRoute({
@@ -47,7 +54,7 @@ export async function proxy(request: NextRequest) {
     });
   }
 
-  if (setupComplete) {
+  if (confirmedSetupComplete && setupCookie !== "1") {
     result.cookies.set(SETUP_COOKIE, "1", {
       httpOnly: true,
       sameSite: "lax",
@@ -60,6 +67,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|assets/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|woff2)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|icon.svg|apple-icon.png|assets/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|woff2)$).*)",
   ],
 };

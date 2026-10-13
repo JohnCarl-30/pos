@@ -50,5 +50,8 @@ describe("safeNext", () => {
     expect(safeNext("orders")).toBe("/register");
     expect(safeNext(null)).toBe("/register");
     expect(safeNext(undefined)).toBe("/register");
+    expect(safeNext("/\t/evil.test")).toBe("/register");
+    expect(safeNext("/\n/evil.test")).toBe("/register");
+    expect(safeNext("/\t\\evil.test")).toBe("/register");
   });
 });

@@ -31,9 +31,13 @@ export function decideRoute({ pathname, search, signedIn, setupComplete }: Route
   return { type: "next" };
 }
 
+const UNSAFE_NEXT_CHARS = /[\u0000-\u001F\u007F\\]/;
+
 export function safeNext(next: string | null | undefined): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) {
+  if (!next || !next.startsWith("/") || next.startsWith("//") || UNSAFE_NEXT_CHARS.test(next)) {
     return HOME_PATH;
   }
-  return next;
+  const url = new URL(next, "http://n");
+  if (url.origin !== "http://n") return HOME_PATH;
+  return url.pathname + url.search + url.hash;
 }
