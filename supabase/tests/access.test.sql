@@ -71,9 +71,9 @@ select is((select count(*) from public.orders), 1::bigint, 'cashier sees orders 
 select is((select count(*) from public.order_items), 1::bigint, 'cashier sees order items only for their store');
 select is((select count(*) from public.payments), 1::bigint, 'cashier sees payments only for their store');
 select throws_ok($$insert into public.products (name) values ('Coffee')$$, '42501', null, 'cashier cannot add products');
-select is((with u as (update public.product_variants set price = 1 returning 1) select count(*) from u), 0::bigint, 'cashier cannot change prices');
-select is((with u as (update public.orders set status = 'voided' returning 1) select count(*) from u), 0::bigint, 'cashier cannot void orders');
-select is((with u as (update public.stores set name = 'X' returning 1) select count(*) from u), 0::bigint, 'cashier cannot edit stores');
+with u as (update public.product_variants set price = 1 returning 1) select is(count(*), 0::bigint, 'cashier cannot change prices') from u;
+with u as (update public.orders set status = 'voided' returning 1) select is(count(*), 0::bigint, 'cashier cannot void orders') from u;
+with u as (update public.stores set name = 'X' returning 1) select is(count(*), 0::bigint, 'cashier cannot edit stores') from u;
 select throws_ok(
   $$insert into public.register_sessions (register_id, opened_by) values ('00000000-0000-0000-0000-0000000000d2', '00000000-0000-0000-0000-0000000000c3')$$,
   '42501', null, 'cashier cannot open a register in another store'
@@ -83,7 +83,7 @@ select lives_ok(
   'cashier can open a register in their store'
 );
 select lives_ok($$insert into public.customers (name) values ('Ben')$$, 'cashier can add customers');
-select is((with d as (delete from public.customers returning 1) select count(*) from d), 0::bigint, 'cashier cannot delete customers');
+with d as (delete from public.customers returning 1) select is(count(*), 0::bigint, 'cashier cannot delete customers') from d;
 
 reset role;
 set local role authenticated;
@@ -91,15 +91,15 @@ set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000a2","r
 
 select is((select count(*) from public.staff), 3::bigint, 'manager sees staff in their store');
 select lives_ok($$insert into public.products (name) values ('Coffee')$$, 'manager can add products');
-select is((with u as (update public.orders set status = 'voided' where id = '00000000-0000-0000-0000-000000000021' returning 1) select count(*) from u), 1::bigint, 'manager can void an order in their store');
-select is((with u as (update public.orders set status = 'voided' where id = '00000000-0000-0000-0000-000000000022' returning 1) select count(*) from u), 0::bigint, 'manager cannot void another store''s order');
+with u as (update public.orders set status = 'voided' where id = '00000000-0000-0000-0000-000000000021' returning 1) select is(count(*), 1::bigint, 'manager can void an order in their store') from u;
+with u as (update public.orders set status = 'voided' where id = '00000000-0000-0000-0000-000000000022' returning 1) select is(count(*), 0::bigint, 'manager cannot void another store''s order') from u;
 select throws_ok(
   $$insert into public.staff (user_id, name, email, role) values ('00000000-0000-0000-0000-0000000000a6', 'X', 'x@test', 'cashier')$$,
   '42501', null, 'manager cannot add staff'
 );
-select is((with u as (update public.tax_rates set rate_bps = 1 returning 1) select count(*) from u), 0::bigint, 'manager cannot change tax rates');
-select is((with u as (update public.stock_levels set quantity = 9 where store_id = '00000000-0000-0000-0000-0000000000b1' returning 1) select count(*) from u), 1::bigint, 'manager can adjust stock in their store');
-select is((with u as (update public.stock_levels set quantity = 9 where store_id = '00000000-0000-0000-0000-0000000000b2' returning 1) select count(*) from u), 0::bigint, 'manager cannot adjust stock in another store');
+with u as (update public.tax_rates set rate_bps = 1 returning 1) select is(count(*), 0::bigint, 'manager cannot change tax rates') from u;
+with u as (update public.stock_levels set quantity = 9 where store_id = '00000000-0000-0000-0000-0000000000b1' returning 1) select is(count(*), 1::bigint, 'manager can adjust stock in their store') from u;
+with u as (update public.stock_levels set quantity = 9 where store_id = '00000000-0000-0000-0000-0000000000b2' returning 1) select is(count(*), 0::bigint, 'manager cannot adjust stock in another store') from u;
 
 reset role;
 set local role authenticated;
@@ -108,7 +108,7 @@ set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000a1","r
 select is((select count(*) from public.stores), 2::bigint, 'owner sees every store');
 select is((select count(*) from public.orders), 2::bigint, 'owner sees every order');
 select lives_ok($$insert into public.stores (name, currency) values ('Store C', 'EUR')$$, 'owner can add stores');
-select is((with u as (update public.staff set role = 'manager' where id = '00000000-0000-0000-0000-0000000000c3' returning 1) select count(*) from u), 1::bigint, 'owner can change staff roles');
+with u as (update public.staff set role = 'manager' where id = '00000000-0000-0000-0000-0000000000c3' returning 1) select is(count(*), 1::bigint, 'owner can change staff roles') from u;
 
 reset role;
 set local role authenticated;
