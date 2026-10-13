@@ -36,7 +36,7 @@ Copy from `/Users/dyeyyyc/Documents/sales-crm`:
 
 - Config: `package.json` (renamed `pos`), `tsconfig.json`, `next.config.ts`, `postcss.config.mjs`, `eslint.config.mjs`, `.prettierrc`, `components.json`, `.gitignore`, `.vscode/`
 - Agent setup: `.claude/skills/`, `.agents/skills/`, `skills-lock.json`, `AGENTS.md`, `CLAUDE.md`
-- Code: `components/_ui/`, `components/_common/` (sidebar, header, filter-menu, segment-bar, scroll-to-top, sparkline), `components/motion-primitives/`, `lib/utils.ts`, `lib/easings.ts`, `lib/inline-asset.ts`, `lib/sidebar.ts`, `hooks/`, `fonts/`, `scripts/`, `app/globals.css`, `app/layout.tsx`, icons
+- Code: `components/_ui/`, `components/_common/` (sidebar, filter-menu, segment-bar, scroll-to-top; `sparkline` is skipped because it imports CRM data, and it returns with Reports), `components/motion-primitives/`, `lib/utils.ts`, `lib/easings.ts`, `lib/inline-asset.ts`, `lib/sidebar.ts`, `hooks/`, `fonts/`, `scripts/`, `app/globals.css`, `app/layout.tsx`, icons
 - `LICENSE` (MIT, with the copyright line kept)
 
 Do not copy: `components/companies/`, `data/`, `stores/companies-store.ts`, `lib/companies.ts`, `lib/csv.ts` (comes back in sub-project 2), `app/sitemap.ts`, `app/llms.txt`, `lib/seo.ts`, `.builderrules`, `.mcp.json`.
@@ -45,8 +45,9 @@ New:
 
 - `CONVENTIONS.md`: `sales-crm` references this file, but it was never committed. Write it from `.builderrules` plus the rule summary in `sales-crm/CLAUDE.md`, dropping marketing-site rules (hero inlining, SEO layer, `llms.txt`). If the original file turns up, use that instead.
 - `app/robots.ts` disallows all. `metadata.robots` is set to `noindex`.
+- The `x`, `square`, `check-square` and `minus-square` icons that `_ui/dialog` and `_ui/checkbox` import from `companies/` folders move to `_common/`, and their imports are updated.
 - `README.md`: what it is, screenshot, quickstart (`npm i`, `supabase start`, `npm run dev`), env vars, deploy notes, contributing.
-- `.env.example`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (server-only, used only by setup).
+- `.env.example`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (Supabase's current name for the public key), `SUPABASE_SERVICE_ROLE_KEY` (server-only, used only by setup).
 - `.mcp.json` pointing to the user's own Supabase project ref (the user supplies it; it is not the CRM's).
 - `supabase/` from `supabase init`: `config.toml`, `migrations/`, `seed.sql`, `tests/`.
 
@@ -61,7 +62,7 @@ All money is stored as `bigint` minor units (cents). All tables have `id uuid de
 | `business` | single row: `name`, `setup_completed_at` |
 | `stores` | `name`, `address`, `currency` (ISO 4217), `prices_include_tax bool`, `timezone` |
 | `registers` | `store_id`, `name`, `next_receipt_number int` |
-| `staff` | `user_id → auth.users` (unique), `name`, `role` enum(`owner`,`manager`,`cashier`), `active bool` |
+| `staff` | `user_id → auth.users` (unique), `name`, `email` (copied at creation so Settings can list it; `auth.users` isn't readable through RLS), `role` enum(`owner`,`manager`,`cashier`), `active bool` |
 | `staff_stores` | `staff_id`, `store_id` (which stores a staff member can work in; owners implicitly all) |
 | `tax_classes` | business-wide: `name` (e.g. "Standard", "Food", "Exempt"), `is_default bool` (exactly one) |
 | `tax_rates` | `store_id`, `tax_class_id`, `name` (e.g. "VAT 12%"), `rate_bps int` (basis points); unique (`store_id`, `tax_class_id`) |
@@ -81,7 +82,7 @@ Order items keep a copy of the name, price and tax at the time of sale, so later
 
 ### Access control (RLS)
 
-Helper SQL functions (`security definer`, `stable`): `current_staff()`, `current_role()`, `can_access_store(store_id)`.
+Helper SQL functions live in a non-exposed `private` schema (`security definer`, `stable`, `search_path = ''`): `private.staff_id()`, `private.staff_role()`, `private.can_access_store(store_id)`. (`current_role` is a reserved Postgres keyword, so that name is avoided.) The `anon` role gets no table access at all.
 
 | Table group | cashier | manager | owner |
 |---|---|---|---|
@@ -97,7 +98,7 @@ Inactive staff get no access. Order writes in sub-project 3 go through one `crea
 
 ### Seed
 
-`seed.sql` sets up a demo business ("Demo Shop"), one store (USD, prices exclude tax), tax classes Standard (8.25%) and Exempt (0%), two registers, three users (`owner@demo.test`, `manager@demo.test`, `cashier@demo.test`, password `password`), 6 categories, about 30 products with variants and stock, and 10 customers. Seed data is for local development only and is never applied to production.
+`seed.sql` sets up a demo business ("Demo Shop"), two stores ("Main Street" and "Airport Kiosk", both USD, prices exclude tax, so the store switcher can be tried), tax classes Standard (8.25%) and Exempt (0%), three registers, four users (`owner@demo.test`, `manager@demo.test` on both stores, `cashier@demo.test`, and a deactivated `inactive@demo.test`; password `password`), 6 categories, about 30 products with variants and stock, and 10 customers. Seed data is for local development only and is never applied to production.
 
 ## C. Auth and first run
 
