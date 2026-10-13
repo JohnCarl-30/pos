@@ -170,6 +170,14 @@ create policy "staff read their orders" on public.orders
 create policy "staff create orders in their stores" on public.orders
   for insert to authenticated with check (
     private.can_access_store(store_id) and staff_id = (select private.staff_id())
+    and exists (
+      select 1 from public.registers r
+      where r.id = register_id and r.store_id = orders.store_id
+    )
+    and exists (
+      select 1 from public.register_sessions s
+      where s.id = session_id and s.register_id = orders.register_id and s.closed_at is null
+    )
   );
 create policy "managers edit orders" on public.orders
   for update to authenticated using (
@@ -199,3 +207,6 @@ create policy "managers edit payments" on public.payments
   );
 create policy "owner deletes payments" on public.payments
   for delete to authenticated using ((select private.staff_role()) = 'owner');
+
+revoke truncate, references, trigger on all tables in schema public from authenticated, anon;
+alter default privileges in schema public revoke truncate, references, trigger on tables from authenticated, anon;

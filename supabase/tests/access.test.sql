@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(34);
+select plan(36);
 
 truncate table public.business, public.stores, public.staff, public.tax_classes,
   public.categories, public.products, public.customers restart identity cascade;
@@ -71,6 +71,8 @@ select is((select count(*) from public.orders), 1::bigint, 'cashier sees orders 
 select is((select count(*) from public.order_items), 1::bigint, 'cashier sees order items only for their store');
 select is((select count(*) from public.payments), 1::bigint, 'cashier sees payments only for their store');
 select throws_ok($$insert into public.products (name) values ('Coffee')$$, '42501', null, 'cashier cannot add products');
+select throws_ok($$insert into public.orders (store_id, register_id, session_id, staff_id, receipt_number, subtotal, tax_total, total) values ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000d2', '00000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-0000000000c3', 2, 100, 0, 100)$$, '42501', null, 'cashier cannot create an order on another store''s register');
+select throws_ok($$insert into public.orders (store_id, register_id, session_id, staff_id, receipt_number, subtotal, tax_total, total) values ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000d3', '00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-0000000000c3', 2, 100, 0, 100)$$, '42501', null, 'cashier cannot create an order against another register''s session');
 with u as (update public.product_variants set price = 1 returning 1) select is(count(*), 0::bigint, 'cashier cannot change prices') from u;
 with u as (update public.orders set status = 'voided' returning 1) select is(count(*), 0::bigint, 'cashier cannot void orders') from u;
 with u as (update public.stores set name = 'X' returning 1) select is(count(*), 0::bigint, 'cashier cannot edit stores') from u;
