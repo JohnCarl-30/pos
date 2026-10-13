@@ -39,5 +39,7 @@ export function safeNext(next: string | null | undefined): string {
   }
   const url = new URL(next, "http://n");
   if (url.origin !== "http://n") return HOME_PATH;
-  return url.pathname + url.search + url.hash;
+  const path = url.pathname + url.search + url.hash;
+  if (path.startsWith("//")) return HOME_PATH;
+  return path;
 }

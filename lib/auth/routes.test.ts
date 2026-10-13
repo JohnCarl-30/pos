@@ -53,5 +53,7 @@ describe("safeNext", () => {
     expect(safeNext("/\t/evil.test")).toBe("/register");
     expect(safeNext("/\n/evil.test")).toBe("/register");
     expect(safeNext("/\t\\evil.test")).toBe("/register");
+    expect(safeNext("/..//evil.test")).toBe("/register");
+    expect(safeNext("/a/../..//evil.test")).toBe("/register");
   });
 });
