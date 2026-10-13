@@ -1,6 +1,6 @@
 "use server";
 
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { fieldErrorsFrom, type ActionResult } from "@/lib/action-result";
@@ -13,7 +13,9 @@ export async function completeSetup(_: ActionResult, formData: FormData): Promis
 
   const admin = createAdminClient();
   const { data: done } = await admin.rpc("setup_status");
-  if (done) notFound();
+  if (done) {
+    return { ok: false, error: "This shop is already set up. Sign in with the owner account instead." };
+  }
 
   const { data: created, error: userError } = await admin.auth.admin.createUser({
     email: input.email,
@@ -22,7 +24,10 @@ export async function completeSetup(_: ActionResult, formData: FormData): Promis
     user_metadata: { name: input.ownerName },
   });
   if (userError || !created.user) {
-    return { ok: false, fieldErrors: { email: userError?.message ?? "Couldn't create this account." } };
+    return {
+      ok: false,
+      fieldErrors: { email: "Couldn't create an account with this email. If it's already registered, use a different email." },
+    };
   }
 
   const { error } = await admin.rpc("complete_setup", {

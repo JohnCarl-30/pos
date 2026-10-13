@@ -11,10 +11,8 @@ export default async function SetupPage() {
   const { data: done } = await supabase.rpc("setup_status");
   if (done) notFound();
   return (
-    <main className="flex min-h-dvh items-center justify-center p-4">
-      <AuthCard title="Set up your shop" description="Three quick steps. You can change all of this later in Settings.">
-        <SetupWizard />
-      </AuthCard>
-    </main>
+    <AuthCard title="Set up your shop" description="Three quick steps. You can change all of this later in Settings.">
+      <SetupWizard />
+    </AuthCard>
   );
 }

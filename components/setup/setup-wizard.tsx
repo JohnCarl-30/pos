@@ -7,7 +7,7 @@ import { Input } from "@/components/_ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/_ui/select";
 import FormMessage from "@/components/_common/form-message";
 import { completeSetup } from "@/lib/setup/actions";
-import { SETUP_STEPS } from "@/lib/setup/schema";
+import { SETUP_STEPS } from "@/lib/setup/steps";
 import type { ActionResult } from "@/lib/action-result";
 
 function subscribeToNothing() {
@@ -78,9 +78,9 @@ export default function SetupWizard() {
 
   return (
     <form action={action} className="flex flex-col gap-6">
-      <p className="caption-style text-subtle">
+      <span className="caption-style text-subtle block">
         Step {step + 1} of {SETUP_STEPS.length} · {SETUP_STEPS[step].title}
-      </p>
+      </span>
       <FormMessage result={state} />
 
       <fieldset
