@@ -118,7 +118,7 @@ export default function RefundPanel({ context, sessionId, role, currency, onDone
       <DialogHeader>
         <DialogTitle>Refund receipt #{context.receiptNumber}</DialogTitle>
         <DialogDescription>
-          {context.registerName ? `From ${context.registerName}. ` : ""}Pick what&apos;s coming back and how the money goes back.
+          {[context.registerName, new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(context.createdAt)), money(context.total)].filter(Boolean).join(" · ")}. Pick what&apos;s coming back and how the money goes back.
         </DialogDescription>
       </DialogHeader>
       {error && <span role="alert" className="caption-style text-danger">{error}</span>}

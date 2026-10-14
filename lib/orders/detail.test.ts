@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canVoid, refundAvailability, toRefundContext, unitsLeft, type OrderDetailRow } from "./detail";
+import { canVoid, pickReceiptMatch, refundAvailability, toRefundContext, unitsLeft, type OrderDetailRow } from "./detail";
 
 const order: OrderDetailRow = {
   id: "o1",
@@ -88,5 +88,22 @@ describe("refundAvailability", () => {
       ],
     };
     expect(refundAvailability({ ...order, status: "refunded", refunds: [all] }, till)).toBe("nothing");
+  });
+});
+
+describe("pickReceiptMatch", () => {
+  const matches = [
+    { id: "other-new", register_id: "r2", created_at: "2026-10-14T12:00:00Z" },
+    { id: "mine", register_id: "r1", created_at: "2026-10-14T09:00:00Z" },
+  ];
+  it("prefers the sale from this till's register", () => {
+    expect(pickReceiptMatch(matches, "r1")).toBe("mine");
+  });
+  it("falls back to the newest sale", () => {
+    expect(pickReceiptMatch(matches, "r9")).toBe("other-new");
+    expect(pickReceiptMatch(matches, null)).toBe("other-new");
+  });
+  it("finds nothing in an empty list", () => {
+    expect(pickReceiptMatch([], "r1")).toBeNull();
   });
 });

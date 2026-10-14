@@ -126,6 +126,8 @@ drop policy "staff add payments" on public.payments;
 drop policy "managers edit payments" on public.payments;
 drop policy "owner deletes payments" on public.payments;
 revoke update, delete on public.orders, public.order_items, public.payments, public.register_sessions from authenticated;
+revoke insert on public.register_sessions from authenticated;
+grant insert (register_id, opened_by, opening_cash) on public.register_sessions to authenticated;
 
 drop policy "managers delete customers" on public.customers;
 create policy "staff delete customers" on public.customers
@@ -423,7 +425,7 @@ begin
   from public.orders o
   join public.register_sessions rs on rs.id = o.session_id
   where o.id = p_order_id
-  for update of o;
+  for update of o, rs;
   if not found or not private.can_access_store(v_order.store_id) then
     raise exception 'sale not found' using errcode = 'P0002';
   end if;

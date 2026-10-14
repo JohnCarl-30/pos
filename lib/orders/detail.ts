@@ -50,7 +50,7 @@ export type OrderDetailRow = {
 
 export type RefundableLine = { orderItemId: string; name: string; quantity: number; refunded: number; lineTotal: number; tax: number; unitPaid: number };
 
-export type RefundContext = { orderId: string; receiptNumber: number; registerName: string; createdAt: string; lines: RefundableLine[]; room: MethodRoom };
+export type RefundContext = { orderId: string; receiptNumber: number; registerName: string; createdAt: string; total: number; lines: RefundableLine[]; room: MethodRoom };
 
 export type DeviceSession = { sessionId: string; registerName: string };
 
@@ -80,6 +80,7 @@ export function toRefundContext(order: OrderDetailRow): RefundContext {
     receiptNumber: order.receipt_number,
     registerName: order.register?.name ?? "",
     createdAt: order.created_at,
+    total: order.total,
     lines,
     room: methodRoom(order.payments, order.refunds.flatMap((refund) => refund.refund_payments)),
   };
@@ -98,4 +99,11 @@ export function canVoid(order: OrderDetailRow, staff: { id: string; role: StaffR
 export function refundAvailability(order: OrderDetailRow, session: DeviceSession | null): "ok" | "no-till" | "nothing" {
   if (order.status === "voided" || unitsLeft(toRefundContext(order)) === 0) return "nothing";
   return session ? "ok" : "no-till";
+}
+
+export function pickReceiptMatch(matches: { id: string; register_id: string; created_at: string }[], registerId: string | null): string | null {
+  const own = matches.find((match) => match.register_id === registerId);
+  if (own) return own.id;
+  const newest = [...matches].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+  return newest?.id ?? null;
 }

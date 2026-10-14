@@ -24,7 +24,7 @@ function ReturnForm({ sessionId, role, currency, onDone }: ReturnDialogProps & {
     setPending(true);
     setError(null);
     try {
-      const result = await findSaleByReceipt({ receiptNumber: Number(receipt.trim().replace(/^#/, "")) });
+      const result = await findSaleByReceipt({ receiptNumber: Number(receipt.trim().replace(/^#/, "")), sessionId });
       if (result.ok) setContext(result.context);
       else setError(result.error);
     } catch {

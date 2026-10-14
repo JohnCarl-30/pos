@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(50);
+select plan(52);
 
 truncate table public.business, public.stores, public.staff, public.tax_classes,
   public.categories, public.products, public.customers restart identity cascade;
@@ -196,6 +196,16 @@ select throws_ok(
 select throws_ok($$delete from public.customers where id = '00000000-0000-0000-0000-0000000000e7'$$, '23503', null, 'a customer with sales cannot be deleted');
 select lives_ok($$delete from public.customers where id = '00000000-0000-0000-0000-0000000000e8'$$, 'a cashier deletes a customer without sales');
 select is((select count(*) from public.refund_approvals where requested_by <> '00000000-0000-0000-0000-0000000000c3'), 0::bigint, 'a cashier only sees approvals they asked for');
+select throws_ok(
+  $$insert into public.register_sessions (register_id, opened_by, opening_cash, closed_by, closed_at, counted_cash)
+    values ('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000c3', 0, '00000000-0000-0000-0000-0000000000c1', now(), 999)$$,
+  '42501', null, 'staff cannot insert an already-closed till session'
+);
+select throws_ok(
+  $$insert into public.register_sessions (register_id, opened_by, opening_cash, opened_at)
+    values ('00000000-0000-0000-0000-0000000000d3', '00000000-0000-0000-0000-0000000000c3', 0, now() - interval '30 days')$$,
+  '42501', null, 'staff cannot back-date when a till was opened'
+);
 
 reset role;
 set local role authenticated;

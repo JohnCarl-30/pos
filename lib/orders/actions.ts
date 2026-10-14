@@ -9,7 +9,7 @@ import { verifyApprover } from "@/lib/register/approver";
 import { refundSchema, type RefundInput } from "./refund-schema";
 import { orderDbError, orderErrorKind, type OrderErrorKind } from "./errors";
 import { loadOrder } from "./queries";
-import { toRefundContext, unitsLeft, type RefundContext } from "./detail";
+import { pickReceiptMatch, toRefundContext, unitsLeft, type RefundContext } from "./detail";
 
 async function currencyOf(orderId: string): Promise<string> {
   const supabase = await createClient();
@@ -92,7 +92,7 @@ export async function requestRefundApproval(input: {
   return { ok: true, approvalId: approval.id, maxAmount: approval.max_amount };
 }
 
-export async function findSaleByReceipt(input: { receiptNumber: number }): Promise<{ ok: true; context: RefundContext } | { ok: false; error: string }> {
+export async function findSaleByReceipt(input: { receiptNumber: number; sessionId: string }): Promise<{ ok: true; context: RefundContext } | { ok: false; error: string }> {
   const staff = await requireStaff();
   const store = await getCurrentStore(staff);
   if (!store) return { ok: false, error: "Pick a store in the sidebar first." };
@@ -100,15 +100,12 @@ export async function findSaleByReceipt(input: { receiptNumber: number }): Promi
     return { ok: false, error: "Enter a receipt number, like 42." };
   }
   const supabase = await createClient();
-  const { data: found } = await supabase
-    .from("orders")
-    .select("id")
-    .eq("store_id", store.id)
-    .eq("receipt_number", input.receiptNumber)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const order = found ? await loadOrder(supabase, found.id) : null;
+  const [{ data: matches }, { data: session }] = await Promise.all([
+    supabase.from("orders").select("id, register_id, created_at").eq("store_id", store.id).eq("receipt_number", input.receiptNumber),
+    supabase.from("register_sessions").select("register_id").eq("id", input.sessionId).maybeSingle(),
+  ]);
+  const foundId = pickReceiptMatch(matches ?? [], session?.register_id ?? null);
+  const order = foundId ? await loadOrder(supabase, foundId) : null;
   if (!order) return { ok: false, error: "No sale with that receipt number in this store." };
   if (order.status === "voided") return { ok: false, error: "That sale was voided, so there's nothing to refund." };
   const context = toRefundContext(order);
