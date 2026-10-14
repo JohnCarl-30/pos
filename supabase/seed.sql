@@ -111,8 +111,9 @@ select p.id, k.variant,
 from catalog k
 join prods p on p.name = k.product;
 
-insert into public.stock_levels (variant_id, store_id, quantity)
-select v.id, s.id, (abs(hashtext(v.sku || s.name)) % 40) + 3
+insert into public.stock_movements (store_id, variant_id, quantity_change, reason, staff_id, note)
+select s.id, v.id, (abs(hashtext(v.sku || s.name)) % 40) + 3, 'received',
+  (select id from public.staff where role = 'owner' order by created_at limit 1), 'Opening stock'
 from public.product_variants v cross join public.stores s;
 
 insert into public.customers (name, email, phone) values
