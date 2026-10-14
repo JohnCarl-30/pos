@@ -70,14 +70,18 @@ export function parseProductFilters(params: Record<string, string | string[] | u
   };
 }
 
-export function filterProductRows(rows: ProductRow[], filters: ProductFilters) {
+export function matchProductRows(rows: ProductRow[], filters: ProductFilters): ProductRow[] {
   const query = filters.q.toLowerCase();
-  const matching = rows
+  return rows
     .filter((row) => (filters.view === "archived" ? !row.active : row.active))
     .filter((row) => filters.view !== "low" || row.lowStock)
     .filter((row) => !filters.category || row.categoryId === filters.category)
     .filter((row) => !query || row.search.includes(query))
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function filterProductRows(rows: ProductRow[], filters: ProductFilters) {
+  const matching = matchProductRows(rows, filters);
   const pages = Math.max(1, Math.ceil(matching.length / PAGE_SIZE));
   const page = Math.min(filters.page, pages);
   return { rows: matching.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), total: matching.length, pages };

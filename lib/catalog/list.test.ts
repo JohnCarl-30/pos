@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterProductRows, formatPriceRange, parseProductFilters, toProductRows, type ProductQueryRow } from "./list";
+import { filterProductRows, formatPriceRange, matchProductRows, parseProductFilters, toProductRows, type ProductQueryRow } from "./list";
 
 const store = "s1";
 const data: ProductQueryRow[] = [
@@ -55,5 +55,13 @@ describe("formatPriceRange", () => {
     expect(formatPriceRange(rows[0], "USD")).toBe("$4.20 – $5.20");
     expect(formatPriceRange(rows[1], "USD")).toBe("$3.00");
     expect(formatPriceRange(rows[2], "USD")).toBe("—");
+  });
+});
+
+describe("matchProductRows", () => {
+  it("returns every match without paging", () => {
+    const rows = toProductRows(data, store);
+    const many = Array.from({ length: 70 }, (_, index) => ({ ...rows[1], id: `m${index}`, name: `M ${String(index).padStart(2, "0")}` }));
+    expect(matchProductRows(many, parseProductFilters({}))).toHaveLength(70);
   });
 });
