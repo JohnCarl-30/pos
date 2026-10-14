@@ -15,19 +15,32 @@ on conflict (variant_id, store_id) do nothing;
 
 create table public.stock_movements (
   id uuid primary key default gen_random_uuid(),
-  store_id uuid not null references public.stores (id) on delete cascade,
-  variant_id uuid not null references public.product_variants (id) on delete cascade,
+  store_id uuid not null references public.stores (id) on delete restrict,
+  variant_id uuid not null references public.product_variants (id) on delete restrict,
   quantity_change integer not null check (quantity_change <> 0),
   reason public.stock_reason not null,
   staff_id uuid not null references public.staff (id) on delete restrict,
   note text check (length(note) <= 300),
   transfer_id uuid,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  constraint stock_movements_sign_matches_reason check (
+    (reason in ('received', 'transfer_in', 'returned') and quantity_change > 0)
+    or (reason in ('damaged', 'transfer_out', 'sold') and quantity_change < 0)
+    or reason in ('counted', 'correction')
+  )
 );
 create index stock_movements_store_created_idx on public.stock_movements (store_id, created_at desc);
 create index stock_movements_variant_store_created_idx on public.stock_movements (variant_id, store_id, created_at desc);
 create index stock_movements_staff_id_idx on public.stock_movements (staff_id);
 create index stock_movements_transfer_id_idx on public.stock_movements (transfer_id) where transfer_id is not null;
+
+do $$
+begin
+  if exists (select 1 from public.stock_levels where quantity <> 0)
+    and not exists (select 1 from public.staff where role = 'owner') then
+    raise exception 'opening stock exists but no owner to attribute it to';
+  end if;
+end $$;
 
 insert into public.stock_movements (store_id, variant_id, quantity_change, reason, staff_id, note)
 select sl.store_id, sl.variant_id, sl.quantity, 'counted', o.id, 'Opening stock'
@@ -109,6 +122,9 @@ create policy "managers record stock movements" on public.stock_movements
     and staff_id = (select private.staff_id())
     and reason in ('received', 'counted', 'damaged', 'correction')
   );
+
+revoke insert on public.stock_movements from authenticated;
+grant insert (store_id, variant_id, quantity_change, reason, staff_id, note) on public.stock_movements to authenticated;
 
 revoke insert, update, delete on public.stock_levels from authenticated;
 grant update (track, low_stock_at) on public.stock_levels to authenticated;

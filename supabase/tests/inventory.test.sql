@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(16);
+select plan(19);
 
 truncate table public.business, public.stores, public.staff, public.tax_classes,
   public.categories, public.products, public.customers restart identity cascade;
@@ -62,6 +62,18 @@ with u as (update public.stock_levels set low_stock_at = 2, track = false where 
 select is(count(*), 1::bigint, 'a manager can change tracking and the low-stock level') from u;
 select throws_ok($$update public.stock_movements set quantity_change = 1$$, '42501', null, 'history cannot be edited');
 select throws_ok($$delete from public.stock_movements$$, '42501', null, 'history cannot be deleted');
+select throws_ok(
+  $$delete from public.product_variants where id = '00000000-0000-0000-0000-0000000000f2'$$,
+  '23503', null, 'a variant with stock history cannot be deleted'
+);
+select throws_ok(
+  $$insert into public.stock_movements (store_id, variant_id, quantity_change, reason, staff_id) values ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000f2', 4, 'damaged', '00000000-0000-0000-0000-0000000000c2')$$,
+  '23514', null, 'damage must reduce stock'
+);
+select throws_ok(
+  $$insert into public.stock_movements (store_id, variant_id, quantity_change, reason, staff_id, created_at) values ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000f2', 1, 'received', '00000000-0000-0000-0000-0000000000c2', '2000-01-01')$$,
+  '42501', null, 'history cannot be backdated'
+);
 
 reset role;
 set local role authenticated;
