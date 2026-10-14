@@ -11,12 +11,15 @@ import type { ActionResult } from "@/lib/action-result";
 type TaxClass = { id: string; name: string; is_default: boolean };
 
 function MakeDefault({ taxClass }: { taxClass: TaxClass }) {
-  const [, action, pending] = useActionState<ActionResult, FormData>(setDefaultTaxClass, null);
+  const [state, action, pending] = useActionState<ActionResult, FormData>(setDefaultTaxClass, null);
   return (
-    <form action={action}>
-      <input type="hidden" name="id" value={taxClass.id} />
-      <Button type="submit" variant="ghost" size="sm" disabled={pending}>Make default</Button>
-    </form>
+    <div className="flex items-center gap-2">
+      {state && !state.ok && <span role="alert" className="caption-style text-danger">{state.error}</span>}
+      <form action={action}>
+        <input type="hidden" name="id" value={taxClass.id} />
+        <Button type="submit" variant="ghost" size="sm" disabled={pending}>Make default</Button>
+      </form>
+    </div>
   );
 }
 

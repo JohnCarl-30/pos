@@ -5,7 +5,8 @@ security invoker
 set search_path = ''
 as $$
 begin
-  if not exists (select 1 from public.tax_classes where id = p_id) then
+  perform 1 from public.tax_classes where id = p_id for update;
+  if not found then
     raise exception 'tax class not found' using errcode = 'P0002';
   end if;
 

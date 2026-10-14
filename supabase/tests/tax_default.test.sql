@@ -39,9 +39,10 @@ reset role;
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}';
 
-select lives_ok(
+select throws_ok(
   $$select public.set_default_tax_class('00000000-0000-0000-0000-0000000000e1')$$,
-  'a manager''s call does not raise, because the tax class is still visible under the staff read policy'
+  'P0002', 'tax class not found',
+  'a manager''s call raises P0002, because the row-lock on the existence check also enforces the owner-only write policy, hiding the row from the manager entirely'
 );
 select is(
   (select count(*) from public.tax_classes where is_default),
@@ -51,7 +52,7 @@ select is(
 select is(
   (select id from public.tax_classes where is_default),
   '00000000-0000-0000-0000-0000000000e2'::uuid,
-  'the default is unchanged, because the owner-only write policy hides the rows from the update and it affects 0 rows'
+  'the default is unchanged by the manager''s call'
 );
 
 reset role;

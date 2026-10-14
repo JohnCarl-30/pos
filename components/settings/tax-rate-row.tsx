@@ -15,12 +15,13 @@ type TaxRateRowProps = {
 
 export default function TaxRateRow({ storeId, taxClass, rate }: TaxRateRowProps) {
   const [state, action, pending] = useActionState<ActionResult, FormData>(saveTaxRate, null);
-  const [prevRate, setPrevRate] = useState(rate);
+  const rateKey = `${rate?.name ?? ""}|${rate?.rate ?? ""}`;
+  const [prevKey, setPrevKey] = useState(rateKey);
   const [name, setName] = useState(rate?.name ?? taxClass.name);
   const [rateValue, setRateValue] = useState(rate?.rate ?? "0");
 
-  if (rate !== prevRate) {
-    setPrevRate(rate);
+  if (rateKey !== prevKey) {
+    setPrevKey(rateKey);
     setName(rate?.name ?? taxClass.name);
     setRateValue(rate?.rate ?? "0");
   }
