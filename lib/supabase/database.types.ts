@@ -765,6 +765,15 @@ export type Database = {
         };
         Returns: string;
       };
+      record_stock_count: {
+        Args: {
+          p_counted: number;
+          p_note?: string;
+          p_store_id: string;
+          p_variant_id: string;
+        };
+        Returns: number;
+      };
       set_default_tax_class: { Args: { p_id: string }; Returns: undefined };
       set_staff_access: {
         Args: {
@@ -776,6 +785,16 @@ export type Database = {
         Returns: undefined;
       };
       setup_status: { Args: Record<PropertyKey, never>; Returns: boolean };
+      transfer_stock: {
+        Args: {
+          p_from: string;
+          p_note?: string;
+          p_quantity: number;
+          p_to: string;
+          p_variant_id: string;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       order_status: "completed" | "voided" | "refunded" | "partially_refunded";
