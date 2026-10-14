@@ -64,6 +64,7 @@ Managers and owners keep full catalog writes (categories, products, variants) fr
 ### Functions
 - `public.record_stock_count(p_store_id uuid, p_variant_id uuid, p_counted integer, p_note text)` — security invoker. Locks the `stock_levels` row (`for update`), inserts a `counted` movement of `p_counted - current` (skips if zero). Returns the new quantity.
 - `public.transfer_stock(p_from uuid, p_to uuid, p_variant_id uuid, p_quantity integer, p_note text)` — `security definer`, `search_path = ''`. Checks `auth.uid()` maps to an active manager/owner with `private.can_access_store` on **both** stores, `p_from <> p_to`, `p_quantity > 0`. Inserts `transfer_out` (−q) and `transfer_in` (+q) with a shared `transfer_id` in one transaction. `execute` revoked from `public, anon`, granted to `authenticated`.
+- `public.save_product(p_store_id uuid, p_product jsonb, p_variants jsonb)` — security invoker. Inserts or updates the product and each listed variant in one transaction, sets `track` for the given store, and returns the product id. Variants not listed are left unchanged. A missing id raises `P0002`.
 - `public.import_catalog(p_store_id uuid, p_rows jsonb)` — security invoker (RLS applies). Applies a validated import in one transaction (see D). Raises on any row error so nothing is half-applied.
 
 ## B. Products page (`/products`, managers and owners)
@@ -76,12 +77,13 @@ Managers and owners keep full catalog writes (categories, products, variants) fr
   - "Archived" toggle;
   - CSV export and import;
   - "New product".
-- **Product editor** (dialog or side sheet, following existing `_ui` patterns):
+- **Product page** (`/products/new` and `/products/[id]`) with **Details** and **Stock** tabs. Details is the editor:
   - product name, category, tax class, description, active;
-  - variants list, each row: name, SKU, barcode, price, cost, track stock; add, reorder, archive/restore;
+  - variants list, each row: name, SKU, barcode, price, cost, track stock (for the current store — tracking is per store); add, reorder, archive/restore;
   - a new product starts with one variant named "Default";
   - SKU and barcode uniqueness errors appear on the right row;
-  - prices and costs are entered and shown with `lib/money.ts` in the current store's currency.
+  - prices and costs are entered and shown with `lib/money.ts` in the current store's currency. Prices are business-wide, so all stores should share one currency until multi-currency arrives; the README says so.
+  - Saving calls one function so the product and all its variants save together or not at all.
 - **Categories dialog:** add, rename, reorder, remove (products become uncategorised).
 - Archiving a product archives it everywhere; it disappears from the register (sub-project 3) and from default lists.
 
