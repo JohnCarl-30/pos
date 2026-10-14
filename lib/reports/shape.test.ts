@@ -33,18 +33,24 @@ describe("sortProducts", () => {
 });
 
 describe("trendBars", () => {
-  it("scales bars to the largest day, keeping refunds-only days below the line", () => {
+  it("draws refunds-only days on the same scale as sales days", () => {
     expect(
       trendBars([
         { bucket: "2026-10-13", sales_count: 1, sales_total: 1000, refunds_total: 0, net_sales: 1000 },
         { bucket: "2026-10-14", sales_count: 0, sales_total: 0, refunds_total: 250, net_sales: -250 },
         { bucket: "2026-10-15", sales_count: 0, sales_total: 0, refunds_total: 0, net_sales: 0 },
       ]),
-    ).toEqual([
-      { bucket: "2026-10-13", net: 1000, height: 100, negative: false },
-      { bucket: "2026-10-14", net: -250, height: 25, negative: true },
-      { bucket: "2026-10-15", net: 0, height: 0, negative: false },
-    ]);
+    ).toEqual({
+      positivePart: 80,
+      bars: [
+        { bucket: "2026-10-13", net: 1000, height: 100, negative: false },
+        { bucket: "2026-10-14", net: -250, height: 100, negative: true },
+        { bucket: "2026-10-15", net: 0, height: 0, negative: false },
+      ],
+    });
+  });
+  it("uses the whole height when nothing is negative", () => {
+    expect(trendBars([{ bucket: "2026-10-13", sales_count: 1, sales_total: 500, refunds_total: 0, net_sales: 500 }]).positivePart).toBe(100);
   });
 });
 

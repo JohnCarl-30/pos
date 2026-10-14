@@ -18,14 +18,18 @@ export function sortProducts(rows: ProductReportRow[], sort: "revenue" | "units"
   );
 }
 
-export function trendBars(points: TrendPoint[]): { bucket: string; net: number; height: number; negative: boolean }[] {
-  const max = Math.max(0, ...points.map((point) => Math.abs(point.net_sales)));
-  return points.map((point) => ({
-    bucket: point.bucket,
-    net: point.net_sales,
-    height: max === 0 ? 0 : Math.round((Math.abs(point.net_sales) / max) * 100),
-    negative: point.net_sales < 0,
-  }));
+export function trendBars(points: TrendPoint[]): { positivePart: number; bars: { bucket: string; net: number; height: number; negative: boolean }[] } {
+  const maxPositive = Math.max(0, ...points.map((point) => point.net_sales));
+  const maxNegative = Math.max(0, ...points.map((point) => -point.net_sales));
+  const span = maxPositive + maxNegative;
+  return {
+    positivePart: span === 0 ? 100 : Math.round((maxPositive / span) * 100),
+    bars: points.map((point) => {
+      const negative = point.net_sales < 0;
+      const max = negative ? maxNegative : maxPositive;
+      return { bucket: point.bucket, net: point.net_sales, height: max === 0 ? 0 : Math.round((Math.abs(point.net_sales) / max) * 100), negative };
+    }),
+  };
 }
 
 export function tickLabel(bucket: string, kind: "hour" | "day"): string {

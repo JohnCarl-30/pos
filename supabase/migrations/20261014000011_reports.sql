@@ -112,7 +112,7 @@ create function public.report_summary(p_store_id uuid, p_from timestamptz, p_to 
 returns jsonb
 language plpgsql
 stable
-security invoker
+security definer
 set search_path = ''
 as $$
 #variable_conflict use_column
@@ -184,7 +184,7 @@ create function public.report_trend(p_store_id uuid, p_from timestamptz, p_to ti
 returns table (bucket text, sales_count integer, sales_total bigint, refunds_total bigint, net_sales bigint)
 language plpgsql
 stable
-security invoker
+security definer
 set search_path = ''
 as $$
 #variable_conflict use_column
@@ -230,7 +230,7 @@ create function public.report_products(p_store_id uuid, p_from timestamptz, p_to
 returns table (variant_id uuid, name text, category text, units_sold integer, units_refunded integer, net_units integer, revenue bigint, refunded bigint, net_revenue bigint)
 language plpgsql
 stable
-security invoker
+security definer
 set search_path = ''
 as $$
 #variable_conflict use_column
@@ -274,7 +274,7 @@ create function public.report_staff(p_store_id uuid, p_from timestamptz, p_to ti
 returns table (staff_id uuid, name text, sales_count integer, sales_total bigint, refund_count integer, refunds_total bigint, void_count integer, void_total bigint, cash_void_count integer, discounts bigint)
 language plpgsql
 stable
-security invoker
+security definer
 set search_path = ''
 as $$
 #variable_conflict use_column
@@ -322,7 +322,7 @@ create function public.report_cashups(p_store_id uuid, p_from timestamptz, p_to 
 returns table (session_id uuid, register text, opened_at timestamptz, closed_at timestamptz, opened_by text, closed_by text, opening_cash bigint, cash_sales bigint, cash_refunds bigint, expected_cash bigint, counted_cash bigint, difference bigint, close_note text)
 language plpgsql
 stable
-security invoker
+security definer
 set search_path = ''
 as $$
 #variable_conflict use_column

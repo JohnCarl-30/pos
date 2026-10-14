@@ -23,6 +23,13 @@ test("a manager sees today's sales and the cashier who voided a cash sale", asyn
   await expect(page.getByText("Voided a cash sale")).toBeVisible();
 });
 
+test("a bar's value can be read with the keyboard", async ({ page }) => {
+  await openReports(page);
+  const bar = page.getByRole("img", { name: /^00:00 net sales/ });
+  await bar.focus();
+  await expect(page.getByText("00:00 · $0.00")).toBeVisible();
+});
+
 test("the date range lives in the URL", async ({ page }) => {
   await openReports(page);
   await page.getByRole("combobox", { name: "Date range" }).click();
