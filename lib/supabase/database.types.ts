@@ -765,6 +765,10 @@ export type Database = {
         };
         Returns: string;
       };
+      import_catalog: {
+        Args: { p_rows: Json; p_store_id: string };
+        Returns: number;
+      };
       record_stock_count: {
         Args: {
           p_counted: number;
@@ -773,6 +777,10 @@ export type Database = {
           p_variant_id: string;
         };
         Returns: number;
+      };
+      save_product: {
+        Args: { p_product: Json; p_store_id: string; p_variants: Json };
+        Returns: string;
       };
       set_default_tax_class: { Args: { p_id: string }; Returns: undefined };
       set_staff_access: {
