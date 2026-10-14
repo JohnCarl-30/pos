@@ -33,6 +33,14 @@ To try the first-run setup instead, run `npx supabase db reset --no-seed` and op
 - **CSV import/export:** export, edit in a spreadsheet, import back. Imports are matched by SKU, previewed before anything is saved, and applied all-or-nothing. Comma or semicolon files both work.
 - **One currency for now:** prices are shared by every store, so all stores should use the same currency until multi-currency support arrives.
 
+## Register
+
+- **Tills:** each device picks its register and opens the till with the starting cash. Closing the till compares counted cash with what the sales say should be there.
+- **Selling:** tap products, search, or scan a barcode (any USB scanner that types works). Discount a line or the whole sale by % or amount. Cashiers can discount up to the store's limit (20% by default, set in Settings → Stores); bigger discounts need a manager or owner to approve on the till.
+- **Payments:** cash with change, card, other, or any split of them. Card payments are recorded, not charged — use your existing card terminal.
+- **Receipts:** printed from the browser at 80mm width, so any receipt printer your device can print to works. Reprint the last receipt from the register.
+- **Totals are always calculated by the database** from current prices, so they can't be changed from the browser.
+
 ## Scripts
 
 | Script | What it does |
