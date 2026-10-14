@@ -42,9 +42,10 @@ insert into public.products (id, category_id, name) values
   ('00000000-0000-0000-0000-0000000000f2', '00000000-0000-0000-0000-0000000000f1', 'Tea');
 insert into public.product_variants (id, product_id, sku, price) values
   ('00000000-0000-0000-0000-0000000000f3', '00000000-0000-0000-0000-0000000000f2', 'TEA', 300);
-insert into public.stock_levels (variant_id, store_id, quantity) values
-  ('00000000-0000-0000-0000-0000000000f3', '00000000-0000-0000-0000-0000000000b1', 10),
-  ('00000000-0000-0000-0000-0000000000f3', '00000000-0000-0000-0000-0000000000b2', 5);
+update public.stock_levels set quantity = 10
+where variant_id = '00000000-0000-0000-0000-0000000000f3' and store_id = '00000000-0000-0000-0000-0000000000b1';
+update public.stock_levels set quantity = 5
+where variant_id = '00000000-0000-0000-0000-0000000000f3' and store_id = '00000000-0000-0000-0000-0000000000b2';
 insert into public.register_sessions (id, register_id, opened_by) values
   ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000c3'),
   ('00000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-0000000000d2', '00000000-0000-0000-0000-0000000000c4');
@@ -100,8 +101,8 @@ select throws_ok(
   '42501', null, 'manager cannot add staff'
 );
 with u as (update public.tax_rates set rate_bps = 1 returning 1) select is(count(*), 0::bigint, 'manager cannot change tax rates') from u;
-with u as (update public.stock_levels set quantity = 9 where store_id = '00000000-0000-0000-0000-0000000000b1' returning 1) select is(count(*), 1::bigint, 'manager can adjust stock in their store') from u;
-with u as (update public.stock_levels set quantity = 9 where store_id = '00000000-0000-0000-0000-0000000000b2' returning 1) select is(count(*), 0::bigint, 'manager cannot adjust stock in another store') from u;
+with u as (update public.stock_levels set low_stock_at = 9 where store_id = '00000000-0000-0000-0000-0000000000b1' returning 1) select is(count(*), 1::bigint, 'manager can adjust stock settings in their store') from u;
+with u as (update public.stock_levels set low_stock_at = 9 where store_id = '00000000-0000-0000-0000-0000000000b2' returning 1) select is(count(*), 0::bigint, 'manager cannot adjust stock settings in another store') from u;
 
 reset role;
 set local role authenticated;

@@ -66,3 +66,12 @@ export function parseMoney(input: string, currency: string): number | null {
     Number(fraction.padEnd(digits, "0") || "0");
   return negative && value !== 0 ? -value : value;
 }
+
+export function formatAmount(minor: number, currency: string): string {
+  const digits = currencyDigits(currency);
+  const sign = minor < 0 ? "-" : "";
+  const absolute = Math.abs(minor);
+  if (digits === 0) return `${sign}${absolute}`;
+  const scale = 10 ** digits;
+  return `${sign}${Math.floor(absolute / scale)}.${String(absolute % scale).padStart(digits, "0")}`;
+}

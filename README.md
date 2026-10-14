@@ -26,6 +26,13 @@ Open http://localhost:3000 and sign in with a demo account (password `password`)
 
 To try the first-run setup instead, run `npx supabase db reset --no-seed` and open the app in a private window.
 
+## Catalog & stock
+
+- **Products** (managers and owners): add products with named variants, each with its own SKU, barcode, price and cost. Archive instead of deleting, so past sales stay intact.
+- **Stock** is kept per store as a history: received, counted, damaged, corrected or transferred. Counts always match the history. Set a low-stock level per item to use the "Low stock" filter.
+- **CSV import/export:** export, edit in a spreadsheet, import back. Imports are matched by SKU, previewed before anything is saved, and applied all-or-nothing. Comma or semicolon files both work.
+- **One currency for now:** prices are shared by every store, so all stores should use the same currency until multi-currency support arrives.
+
 ## Scripts
 
 | Script | What it does |

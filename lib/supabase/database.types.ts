@@ -299,6 +299,7 @@ export type Database = {
       };
       product_variants: {
         Row: {
+          active: boolean;
           barcode: string | null;
           cost: number | null;
           created_at: string;
@@ -307,9 +308,11 @@ export type Database = {
           price: number;
           product_id: string;
           sku: string;
+          sort_order: number;
         };
         ComputedFields: never;
         Insert: {
+          active?: boolean;
           barcode?: string | null;
           cost?: number | null;
           created_at?: string;
@@ -318,8 +321,10 @@ export type Database = {
           price: number;
           product_id: string;
           sku: string;
+          sort_order?: number;
         };
         Update: {
+          active?: boolean;
           barcode?: string | null;
           cost?: number | null;
           created_at?: string;
@@ -328,6 +333,7 @@ export type Database = {
           price?: number;
           product_id?: string;
           sku?: string;
+          sort_order?: number;
         };
         Relationships: [
           {
@@ -545,6 +551,7 @@ export type Database = {
       stock_levels: {
         Row: {
           created_at: string;
+          low_stock_at: number | null;
           quantity: number;
           store_id: string;
           track: boolean;
@@ -553,6 +560,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           created_at?: string;
+          low_stock_at?: number | null;
           quantity?: number;
           store_id: string;
           track?: boolean;
@@ -560,6 +568,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          low_stock_at?: number | null;
           quantity?: number;
           store_id?: string;
           track?: boolean;
@@ -575,6 +584,65 @@ export type Database = {
           },
           {
             foreignKeyName: "stock_levels_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      stock_movements: {
+        Row: {
+          created_at: string;
+          id: string;
+          note: string | null;
+          quantity_change: number;
+          reason: Database["public"]["Enums"]["stock_reason"];
+          staff_id: string;
+          store_id: string;
+          transfer_id: string | null;
+          variant_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          id?: string;
+          note?: string | null;
+          quantity_change: number;
+          reason: Database["public"]["Enums"]["stock_reason"];
+          staff_id: string;
+          store_id: string;
+          transfer_id?: string | null;
+          variant_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          note?: string | null;
+          quantity_change?: number;
+          reason?: Database["public"]["Enums"]["stock_reason"];
+          staff_id?: string;
+          store_id?: string;
+          transfer_id?: string | null;
+          variant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_staff_id_fkey";
+            columns: ["staff_id"];
+            isOneToOne: false;
+            referencedRelation: "staff";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stock_movements_store_id_fkey";
+            columns: ["store_id"];
+            isOneToOne: false;
+            referencedRelation: "stores";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stock_movements_variant_id_fkey";
             columns: ["variant_id"];
             isOneToOne: false;
             referencedRelation: "product_variants";
@@ -697,6 +765,23 @@ export type Database = {
         };
         Returns: string;
       };
+      import_catalog: {
+        Args: { p_rows: Json; p_store_id: string };
+        Returns: number;
+      };
+      record_stock_count: {
+        Args: {
+          p_counted: number;
+          p_note?: string;
+          p_store_id: string;
+          p_variant_id: string;
+        };
+        Returns: number;
+      };
+      save_product: {
+        Args: { p_product: Json; p_store_id: string; p_variants: Json };
+        Returns: string;
+      };
       set_default_tax_class: { Args: { p_id: string }; Returns: undefined };
       set_staff_access: {
         Args: {
@@ -708,11 +793,30 @@ export type Database = {
         Returns: undefined;
       };
       setup_status: { Args: Record<PropertyKey, never>; Returns: boolean };
+      transfer_stock: {
+        Args: {
+          p_from: string;
+          p_note?: string;
+          p_quantity: number;
+          p_to: string;
+          p_variant_id: string;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       order_status: "completed" | "voided" | "refunded" | "partially_refunded";
       payment_method: "cash" | "card" | "other";
       staff_role: "owner" | "manager" | "cashier";
+      stock_reason:
+        | "received"
+        | "counted"
+        | "damaged"
+        | "transfer_in"
+        | "transfer_out"
+        | "sold"
+        | "returned"
+        | "correction";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -849,6 +953,16 @@ export const Constants = {
       order_status: ["completed", "voided", "refunded", "partially_refunded"],
       payment_method: ["cash", "card", "other"],
       staff_role: ["owner", "manager", "cashier"],
+      stock_reason: [
+        "received",
+        "counted",
+        "damaged",
+        "transfer_in",
+        "transfer_out",
+        "sold",
+        "returned",
+        "correction",
+      ],
     },
   },
 } as const;

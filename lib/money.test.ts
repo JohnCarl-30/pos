@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { currencyDigits, formatMoney, parseMoney } from "./money";
+import { currencyDigits, formatAmount, formatMoney, parseMoney } from "./money";
 
 describe("currencyDigits", () => {
   it("knows minor-unit digits per currency", () => {
@@ -61,5 +61,14 @@ describe("parseMoney", () => {
 
   it("strips currency symbols and whitespace at edges", () => {
     expect(parseMoney("USD 12.50", "USD")).toBe(1250);
+  });
+});
+
+describe("formatAmount", () => {
+  it("writes minor units as a plain decimal", () => {
+    expect(formatAmount(420, "USD")).toBe("4.20");
+    expect(formatAmount(1500, "JPY")).toBe("1500");
+    expect(formatAmount(-5, "EUR")).toBe("-0.05");
+    expect(formatAmount(1234, "KWD")).toBe("1.234");
   });
 });
