@@ -1178,6 +1178,72 @@ export type Database = {
         };
         Returns: number;
       };
+      report_cashups: {
+        Args: { p_from: string; p_store_id: string; p_to: string };
+        Returns: {
+          cash_refunds: number;
+          cash_sales: number;
+          close_note: string;
+          closed_at: string;
+          closed_by: string;
+          counted_cash: number;
+          difference: number;
+          expected_cash: number;
+          opened_at: string;
+          opened_by: string;
+          opening_cash: number;
+          register: string;
+          session_id: string;
+        }[];
+      };
+      report_products: {
+        Args: { p_from: string; p_store_id: string; p_to: string };
+        Returns: {
+          category: string;
+          name: string;
+          net_revenue: number;
+          net_units: number;
+          refunded: number;
+          revenue: number;
+          units_refunded: number;
+          units_sold: number;
+          variant_id: string;
+        }[];
+      };
+      report_staff: {
+        Args: { p_from: string; p_store_id: string; p_to: string };
+        Returns: {
+          cash_void_count: number;
+          discounts: number;
+          name: string;
+          refund_count: number;
+          refunds_total: number;
+          sales_count: number;
+          sales_total: number;
+          staff_id: string;
+          void_count: number;
+          void_total: number;
+        }[];
+      };
+      report_summary: {
+        Args: { p_from: string; p_store_id: string; p_to: string };
+        Returns: Json;
+      };
+      report_trend: {
+        Args: {
+          p_bucket: string;
+          p_from: string;
+          p_store_id: string;
+          p_to: string;
+        };
+        Returns: {
+          bucket: string;
+          net_sales: number;
+          refunds_total: number;
+          sales_count: number;
+          sales_total: number;
+        }[];
+      };
       save_product: {
         Args: { p_product: Json; p_store_id: string; p_variants: Json };
         Returns: string;
