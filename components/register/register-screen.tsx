@@ -296,6 +296,7 @@ export default function RegisterScreen(props: RegisterScreenProps) {
           onVoided={() => {
             setVoidOpen(false);
             setNotice(`Receipt #${done.receiptNumber} voided.`);
+            setLastOrderId(null);
             setDone(null);
           }}
         />

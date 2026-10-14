@@ -14,10 +14,10 @@ export default function OrdersTable({ rows, currency, timeZone }: OrdersTablePro
         <TableRow>
           <TableHead>Receipt</TableHead>
           <TableHead>Date</TableHead>
-          <TableHead>Register</TableHead>
-          <TableHead>Cashier</TableHead>
-          <TableHead>Customer</TableHead>
-          <TableHead>Total</TableHead>
+          <TableHead className="hidden md:table-cell">Register</TableHead>
+          <TableHead className="hidden md:table-cell">Cashier</TableHead>
+          <TableHead className="hidden md:table-cell">Customer</TableHead>
+          <TableHead className="text-right">Total</TableHead>
           <TableHead>Status</TableHead>
         </TableRow>
       </TableHeader>
@@ -28,10 +28,10 @@ export default function OrdersTable({ rows, currency, timeZone }: OrdersTablePro
               <Link href={`/orders/${row.id}`} className="hover:underline">#{row.receipt_number}</Link>
             </TableCell>
             <TableCell>{when.format(new Date(row.created_at))}</TableCell>
-            <TableCell>{row.register?.name ?? "—"}</TableCell>
-            <TableCell>{row.staff?.name ?? "—"}</TableCell>
-            <TableCell>{row.customer?.name ?? "—"}</TableCell>
-            <TableCell>{formatMoney(row.total, currency, "en-US")}</TableCell>
+            <TableCell className="hidden md:table-cell">{row.register?.name ?? "—"}</TableCell>
+            <TableCell className="hidden md:table-cell">{row.staff?.name ?? "—"}</TableCell>
+            <TableCell className="hidden md:table-cell">{row.customer?.name ?? "—"}</TableCell>
+            <TableCell className="text-right tabular-nums">{formatMoney(row.total, currency, "en-US")}</TableCell>
             <TableCell><StatusTag status={row.status} /></TableCell>
           </TableRow>
         ))}

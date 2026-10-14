@@ -44,6 +44,7 @@ export async function loadOrders(supabase: Client, storeId: string, filters: Ord
 const DETAIL_FIELDS = [
   "id, store_id, staff_id, receipt_number, created_at, status, subtotal, discount_total, tax_total, total, void_reason, voided_at",
   "register:registers(name)",
+  "store:stores(timezone)",
   "session:register_sessions(closed_at)",
   "staff:staff!orders_staff_id_fkey(name)",
   "discounter:staff!orders_discount_by_fkey(name)",

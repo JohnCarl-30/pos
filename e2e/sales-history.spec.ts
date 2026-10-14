@@ -79,6 +79,7 @@ test("a cashier voids their own sale and the till still balances", async ({ page
   await page.getByLabel("Reason for the void").fill("Rang up the wrong item");
   await page.getByRole("dialog").getByRole("button", { name: "Void sale" }).click();
   await expect(page.getByText(`Receipt #${voidedReceipt} voided.`)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Reprint last receipt" })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Close till" }).click();
   await page.getByLabel(/Counted cash/).fill("100");

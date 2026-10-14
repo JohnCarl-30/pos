@@ -14,7 +14,7 @@ export default function CustomersTable({ rows, currency, timeZone }: CustomersTa
           <TableHead>Name</TableHead>
           <TableHead>Email</TableHead>
           <TableHead>Phone</TableHead>
-          <TableHead>Total spent</TableHead>
+          <TableHead className="text-right">Total spent</TableHead>
           <TableHead>Last visit</TableHead>
         </TableRow>
       </TableHeader>
@@ -26,7 +26,7 @@ export default function CustomersTable({ rows, currency, timeZone }: CustomersTa
             </TableCell>
             <TableCell>{row.email ?? "—"}</TableCell>
             <TableCell>{row.phone ?? "—"}</TableCell>
-            <TableCell>{formatMoney(row.totalSpent, currency, "en-US")}</TableCell>
+            <TableCell className="text-right tabular-nums">{formatMoney(row.totalSpent, currency, "en-US")}</TableCell>
             <TableCell>{row.lastVisit ? day.format(new Date(row.lastVisit)) : "—"}</TableCell>
           </TableRow>
         ))}

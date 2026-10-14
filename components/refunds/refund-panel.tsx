@@ -118,7 +118,7 @@ export default function RefundPanel({ context, sessionId, role, currency, onDone
       <DialogHeader>
         <DialogTitle>Refund receipt #{context.receiptNumber}</DialogTitle>
         <DialogDescription>
-          {[context.registerName, new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(context.createdAt)), money(context.total)].filter(Boolean).join(" · ")}. Pick what&apos;s coming back and how the money goes back.
+          {[context.registerName, new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short", timeZone: context.timeZone }).format(new Date(context.createdAt)), money(context.total)].filter(Boolean).join(" · ")}. Pick what&apos;s coming back and how the money goes back.
         </DialogDescription>
       </DialogHeader>
       {error && <span role="alert" className="caption-style text-danger">{error}</span>}
@@ -139,17 +139,17 @@ export default function RefundPanel({ context, sessionId, role, currency, onDone
                 <Button variant="secondary" size="icon" className="size-11" aria-label={`Fewer ${line.name}`} disabled={count === 0} onClick={() => step(line.orderItemId, left, -1)}>
                   −
                 </Button>
-                <output aria-label={`Refund quantity of ${line.name}`} className="min-w-8 text-center">
+                <output aria-label={`Refund quantity of ${line.name}`} className="min-w-8 text-center tabular-nums">
                   {count}
                 </output>
                 <Button variant="secondary" size="icon" className="size-11" aria-label={`More ${line.name}`} disabled={count >= left} onClick={() => step(line.orderItemId, left, 1)}>
                   +
                 </Button>
                 <div role="group" aria-label={`Stock for ${line.name}`} className="ml-auto flex gap-1">
-                  <Button variant="ghost" size="md" aria-pressed={stocked} className="aria-pressed:text-foreground min-h-11 aria-pressed:bg-white/6" onClick={() => setRestock((current) => ({ ...current, [line.orderItemId]: true }))}>
+                  <Button variant="ghost" size="md" aria-pressed={stocked} className="aria-pressed:bg-muted aria-pressed:text-foreground min-h-11" onClick={() => setRestock((current) => ({ ...current, [line.orderItemId]: true }))}>
                     Back to stock
                   </Button>
-                  <Button variant="ghost" size="md" aria-pressed={!stocked} className="aria-pressed:text-foreground min-h-11 aria-pressed:bg-white/6" onClick={() => setRestock((current) => ({ ...current, [line.orderItemId]: false }))}>
+                  <Button variant="ghost" size="md" aria-pressed={!stocked} className="aria-pressed:bg-warning/15 aria-pressed:text-warning min-h-11" onClick={() => setRestock((current) => ({ ...current, [line.orderItemId]: false }))}>
                     Damaged
                   </Button>
                 </div>
@@ -177,7 +177,7 @@ export default function RefundPanel({ context, sessionId, role, currency, onDone
           <Input id="refund-note" className="min-h-11" maxLength={300} value={note} onChange={(event) => setNote(event.target.value)} required />
         </Field>
       )}
-      <div className="flex justify-between font-medium">
+      <div className="flex justify-between font-medium tabular-nums">
         <span>Refund total</span>
         <span>{money(totals.total)}</span>
       </div>

@@ -15,13 +15,13 @@ export default function SaleDone({ orderId, receiptNumber, change, money, onNewS
         <a href={`/receipts/${orderId}?print=1`} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "secondary", size: "md" }), "min-h-11")}>
           Print receipt
         </a>
-        <Button variant="ghost" size="md" className="min-h-11" onClick={onVoid}>
-          Void sale
-        </Button>
         <Button variant="primary" size="md" className="min-h-11" onClick={onNewSale} autoFocus>
           New sale
         </Button>
       </div>
+      <Button variant="ghost" size="md" className="mt-6 min-h-11" onClick={onVoid}>
+        Void sale
+      </Button>
     </div>
   );
 }

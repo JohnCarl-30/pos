@@ -43,7 +43,7 @@ export default function OrdersToolbar({ filters, registers, cashiers }: OrdersTo
       </form>
       <Select value={filters.status || "all"} onValueChange={(value) => update({ status: value === "all" ? "" : value })}>
         <SelectTrigger aria-label="Status" className="w-auto min-w-[10em]">
-          <SelectValue />
+          <SelectValue>{filters.status ? ORDER_STATUS_LABELS[filters.status] : "All statuses"}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All statuses</SelectItem>
@@ -54,7 +54,7 @@ export default function OrdersToolbar({ filters, registers, cashiers }: OrdersTo
       </Select>
       <Select value={filters.register || "all"} onValueChange={(value) => update({ register: value === "all" ? "" : value })}>
         <SelectTrigger aria-label="Register" className="w-auto min-w-[9em]">
-          <SelectValue />
+          <SelectValue>{registers.find((register) => register.id === filters.register)?.name ?? "All registers"}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All registers</SelectItem>
@@ -65,7 +65,7 @@ export default function OrdersToolbar({ filters, registers, cashiers }: OrdersTo
       </Select>
       <Select value={filters.cashier || "all"} onValueChange={(value) => update({ cashier: value === "all" ? "" : value })}>
         <SelectTrigger aria-label="Cashier" className="w-auto min-w-[9em]">
-          <SelectValue />
+          <SelectValue>{cashiers.find((cashier) => cashier.id === filters.cashier)?.name ?? "All staff"}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All staff</SelectItem>

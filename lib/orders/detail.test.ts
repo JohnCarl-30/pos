@@ -15,6 +15,7 @@ const order: OrderDetailRow = {
   void_reason: null,
   voided_at: null,
   register: { name: "Counter 1" },
+  store: { timezone: "America/Chicago" },
   session: { closed_at: null },
   staff: { name: "Casey" },
   discounter: null,
@@ -54,6 +55,7 @@ describe("toRefundContext", () => {
       ["Mug", 0, 330],
     ]);
     expect(context.room).toEqual({ card: 170, other: 0 });
+    expect(context.timeZone).toBe("America/Chicago");
     expect(unitsLeft(context)).toBe(3);
   });
 });

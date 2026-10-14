@@ -79,28 +79,28 @@ export default async function OrderPage({ params }: OrderPageProps) {
             <TableHeader>
               <TableRow>
                 <TableHead>Item</TableHead>
-                <TableHead>Qty</TableHead>
-                <TableHead>Refunded</TableHead>
-                <TableHead>Discount</TableHead>
-                <TableHead>Tax</TableHead>
-                <TableHead>Total</TableHead>
+                <TableHead className="text-right">Qty</TableHead>
+                <TableHead className="text-right">Refunded</TableHead>
+                <TableHead className="text-right">Discount</TableHead>
+                <TableHead className="text-right">Tax</TableHead>
+                <TableHead className="text-right">Total</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {items.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.name}<span className="caption-style text-subtle block">{item.sku}</span></TableCell>
-                  <TableCell>{item.quantity} × {money(item.unit_price)}</TableCell>
-                  <TableCell>{refunded.get(item.id) ?? 0}</TableCell>
-                  <TableCell>{item.discount > 0 ? `−${money(item.discount)}` : "—"}</TableCell>
-                  <TableCell>{money(item.tax)}</TableCell>
-                  <TableCell>{money(item.line_total)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{item.quantity} × {money(item.unit_price)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{refunded.get(item.id) ?? 0}</TableCell>
+                  <TableCell className="text-right tabular-nums">{item.discount > 0 ? `−${money(item.discount)}` : "—"}</TableCell>
+                  <TableCell className="text-right tabular-nums">{money(item.tax)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{money(item.line_total)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
 
-          <dl className="flex w-full max-w-[22em] flex-col gap-1 self-end">
+          <dl className="flex w-full max-w-[22em] flex-col gap-1 self-end tabular-nums">
             <div className="flex justify-between"><dt>Subtotal</dt><dd>{money(order.subtotal)}</dd></div>
             {order.discount_total > 0 && <div className="flex justify-between"><dt>Discounts</dt><dd>−{money(order.discount_total)}</dd></div>}
             <div className="flex justify-between"><dt>Tax</dt><dd>{money(order.tax_total)}</dd></div>
@@ -117,7 +117,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
                     {payment.reference ? ` (${payment.reference})` : ""}
                     {payment.change !== null && payment.change > 0 ? ` · change ${money(payment.change)}` : ""}
                   </span>
-                  <span>{money(payment.amount)}</span>
+                  <span className="tabular-nums">{money(payment.amount)}</span>
                 </li>
               ))}
             </ul>

@@ -27,6 +27,7 @@ export type OrderDetailRow = {
   void_reason: string | null;
   voided_at: string | null;
   register: { name: string } | null;
+  store: { timezone: string } | null;
   session: { closed_at: string | null } | null;
   staff: { name: string } | null;
   discounter: { name: string } | null;
@@ -50,7 +51,7 @@ export type OrderDetailRow = {
 
 export type RefundableLine = { orderItemId: string; name: string; quantity: number; refunded: number; lineTotal: number; tax: number; unitPaid: number };
 
-export type RefundContext = { orderId: string; receiptNumber: number; registerName: string; createdAt: string; total: number; lines: RefundableLine[]; room: MethodRoom };
+export type RefundContext = { orderId: string; receiptNumber: number; registerName: string; createdAt: string; timeZone: string; total: number; lines: RefundableLine[]; room: MethodRoom };
 
 export type DeviceSession = { sessionId: string; registerName: string };
 
@@ -80,6 +81,7 @@ export function toRefundContext(order: OrderDetailRow): RefundContext {
     receiptNumber: order.receipt_number,
     registerName: order.register?.name ?? "",
     createdAt: order.created_at,
+    timeZone: order.store?.timezone ?? "UTC",
     total: order.total,
     lines,
     room: methodRoom(order.payments, order.refunds.flatMap((refund) => refund.refund_payments)),
