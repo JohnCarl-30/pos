@@ -16,12 +16,17 @@ export async function saveStore(_: ActionResult, formData: FormData): Promise<Ac
 
   const supabase = await createClient();
   if (id) {
-    const { error } = await supabase.from("stores").update(row).eq("id", id);
+    const { data, error } = await supabase.from("stores").update(row).eq("id", id).select("id");
     if (error) return { ok: false, error: friendlyDbError(error) };
+    if (!data || data.length === 0) return { ok: false, error: "That store no longer exists. Reload the page and try again." };
   } else {
     const { data: store, error } = await supabase.from("stores").insert(row).select("id").single();
     if (error || !store) return { ok: false, error: friendlyDbError(error) };
-    await supabase.from("registers").insert({ store_id: store.id, name: "Register 1" });
+    const { error: registerError } = await supabase.from("registers").insert({ store_id: store.id, name: "Register 1" });
+    if (registerError) {
+      revalidatePath("/", "layout");
+      return { ok: false, error: "The store was added, but its first register wasn't. Use Add register to create one." };
+    }
   }
   revalidatePath("/", "layout");
   return { ok: true, message: id ? "Store saved." : "Store added." };
