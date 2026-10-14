@@ -5,3 +5,7 @@ export function parsePercentToBps(input: string): number | null {
   const bps = Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
   return bps <= 100_000 ? bps : null;
 }
+
+export function formatBpsAsPercent(bps: number): string {
+  return (bps / 100).toFixed(2).replace(/\.?0+$/, "");
+}

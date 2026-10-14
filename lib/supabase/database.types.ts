@@ -697,6 +697,7 @@ export type Database = {
         };
         Returns: string;
       };
+      set_default_tax_class: { Args: { p_id: string }; Returns: undefined };
       setup_status: { Args: Record<PropertyKey, never>; Returns: boolean };
     };
     Enums: {

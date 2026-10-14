@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parsePercentToBps } from "./percent";
+import { formatBpsAsPercent, parsePercentToBps } from "./percent";
 
 describe("parsePercentToBps", () => {
   it("parses whole and decimal percentages", () => {
@@ -16,5 +16,14 @@ describe("parsePercentToBps", () => {
     expect(parsePercentToBps("8.255")).toBeNull();
     expect(parsePercentToBps("1001")).toBeNull();
     expect(parsePercentToBps("1.000,5")).toBeNull();
+  });
+});
+
+describe("formatBpsAsPercent", () => {
+  it("shows basis points as a plain percentage", () => {
+    expect(formatBpsAsPercent(825)).toBe("8.25");
+    expect(formatBpsAsPercent(1200)).toBe("12");
+    expect(formatBpsAsPercent(750)).toBe("7.5");
+    expect(formatBpsAsPercent(0)).toBe("0");
   });
 });
