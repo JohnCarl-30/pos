@@ -11,8 +11,8 @@ export async function saveStore(_: ActionResult, formData: FormData): Promise<Ac
   await requireRole("owner");
   const parsed = storeSchema.safeParse(formToObject(formData));
   if (!parsed.success) return { ok: false, fieldErrors: fieldErrorsFrom(parsed.error) };
-  const { id, pricing, ...fields } = parsed.data;
-  const row = { ...fields, prices_include_tax: pricing === "inclusive" };
+  const { id, pricing, maxCashierDiscount, receiptFooter, ...fields } = parsed.data;
+  const row = { ...fields, prices_include_tax: pricing === "inclusive", max_cashier_discount_bps: maxCashierDiscount, receipt_footer: receiptFooter };
 
   const supabase = await createClient();
   if (id) {

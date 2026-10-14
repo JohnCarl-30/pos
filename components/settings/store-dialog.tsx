@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/_ui/select";
 import FormMessage from "@/components/_common/form-message";
 import { saveStore } from "@/lib/settings/store-actions";
+import { formatBpsAsPercent } from "@/lib/percent";
 import type { ActionResult } from "@/lib/action-result";
 import type { StoreWithRegisters } from "./stores-table";
 
@@ -21,6 +22,8 @@ type StoreFormValues = {
   currency: string;
   timezone: string;
   pricing: PricingValue;
+  maxCashierDiscount: string;
+  receiptFooter: string;
 };
 
 function defaultTimeZone(): string {
@@ -34,6 +37,8 @@ function valuesFromStore(store: StoreWithRegisters | undefined): StoreFormValues
     currency: store?.currency ?? "",
     timezone: store?.timezone ?? defaultTimeZone(),
     pricing: store?.prices_include_tax ? "inclusive" : "exclusive",
+    maxCashierDiscount: formatBpsAsPercent(store?.max_cashier_discount_bps ?? 2000),
+    receiptFooter: store?.receipt_footer ?? "",
   };
 }
 
@@ -136,6 +141,24 @@ function StoreDialogForm({ store, onSaved }: StoreDialogFormProps) {
             <SelectItem value="inclusive">Prices already include tax</SelectItem>
           </SelectContent>
         </Select>
+      </Field>
+      <Field label="Cashier discount limit (%)" htmlFor="store-max-discount" hint="Bigger discounts need a manager or owner to approve" error={fieldErrors?.maxCashierDiscount}>
+        <Input
+          id="store-max-discount"
+          name="maxCashierDiscount"
+          inputMode="decimal"
+          value={values.maxCashierDiscount}
+          onChange={(event) => setValues((current) => ({ ...current, maxCashierDiscount: event.target.value }))}
+        />
+      </Field>
+      <Field label="Receipt footer" htmlFor="store-receipt-footer" hint="Printed at the bottom of every receipt" error={fieldErrors?.receiptFooter}>
+        <Input
+          id="store-receipt-footer"
+          name="receiptFooter"
+          maxLength={300}
+          value={values.receiptFooter}
+          onChange={(event) => setValues((current) => ({ ...current, receiptFooter: event.target.value }))}
+        />
       </Field>
       <DialogFooter>
         <Button type="submit" variant="primary" size="md" disabled={pending}>

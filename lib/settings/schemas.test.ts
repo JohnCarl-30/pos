@@ -19,7 +19,12 @@ describe("formToObject", () => {
 describe("storeSchema", () => {
   it("normalises a new store", () => {
     const store = storeSchema.parse({ id: "", name: " Kiosk ", address: "", currency: "php", timezone: "Asia/Manila", pricing: "inclusive" });
-    expect(store).toEqual({ id: undefined, name: "Kiosk", address: null, currency: "PHP", timezone: "Asia/Manila", pricing: "inclusive" });
+    expect(store).toEqual({ id: undefined, name: "Kiosk", address: null, currency: "PHP", timezone: "Asia/Manila", pricing: "inclusive", maxCashierDiscount: 2000, receiptFooter: null });
+  });
+  it("reads the cashier discount limit and receipt footer", () => {
+    const store = storeSchema.parse({ name: "A", currency: "USD", timezone: "UTC", pricing: "exclusive", maxCashierDiscount: "12,5", receiptFooter: " Thanks! " });
+    expect(store).toMatchObject({ maxCashierDiscount: 1250, receiptFooter: "Thanks!" });
+    expect(storeSchema.safeParse({ name: "A", currency: "USD", timezone: "UTC", pricing: "exclusive", maxCashierDiscount: "150" }).success).toBe(false);
   });
   it("rejects a bad currency", () => {
     expect(storeSchema.safeParse({ name: "A", currency: "ZZZ", timezone: "UTC", pricing: "exclusive" }).success).toBe(false);
