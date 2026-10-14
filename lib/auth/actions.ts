@@ -44,6 +44,6 @@ export async function updatePassword(_: ActionResult, formData: FormData): Promi
 
 export async function signOut(): Promise<void> {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: "local" });
   redirect("/login");
 }

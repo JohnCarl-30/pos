@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, type ReactNode } from "react";
+import { useActionState, useState, type ReactNode } from "react";
 import Button from "@/components/_ui/button";
 import Field from "@/components/_ui/field";
 import { Input } from "@/components/_ui/input";
@@ -39,101 +39,109 @@ function valuesFromStore(store: StoreWithRegisters | undefined): StoreFormValues
 
 export default function StoreDialog({ store, trigger }: StoreDialogProps) {
   const [open, setOpen] = useState(false);
-  const wasOpen = useRef(false);
-  const [state, action, pending] = useActionState<ActionResult, FormData>(saveStore, null);
-  const [prevState, setPrevState] = useState(state);
-  const [values, setValues] = useState<StoreFormValues>(() => valuesFromStore(store));
-  const fieldErrors = state && !state.ok ? state.fieldErrors : undefined;
+  const [prevOpen, setPrevOpen] = useState(open);
+  const [openCount, setOpenCount] = useState(0);
 
-  useEffect(() => {
-    if (open && !wasOpen.current) setValues(valuesFromStore(store));
-    wasOpen.current = open;
-  }, [open, store]);
-
-  if (state !== prevState) {
-    setPrevState(state);
-    if (state?.ok) setOpen(false);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) setOpenCount((count) => count + 1);
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
-        <form action={action} className="flex flex-col gap-4 p-6">
-          <DialogHeader>
-            <DialogTitle>{store ? "Edit store" : "Add store"}</DialogTitle>
-            <DialogDescription>Currency and tax pricing apply to every sale in this store.</DialogDescription>
-          </DialogHeader>
-          <FormMessage result={state && !state.ok ? state : null} />
-          <input type="hidden" name="id" value={store?.id ?? ""} />
-          <Field label="Name" htmlFor="store-name" error={fieldErrors?.name}>
-            <Input
-              id="store-name"
-              name="name"
-              required
-              maxLength={120}
-              value={values.name}
-              onChange={(event) => setValues((current) => ({ ...current, name: event.target.value }))}
-            />
-          </Field>
-          <Field label="Address" htmlFor="store-address" error={fieldErrors?.address}>
-            <Input
-              id="store-address"
-              name="address"
-              maxLength={300}
-              value={values.address}
-              onChange={(event) => setValues((current) => ({ ...current, address: event.target.value }))}
-            />
-          </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Currency" htmlFor="store-currency" error={fieldErrors?.currency}>
-              <Input
-                id="store-currency"
-                name="currency"
-                required
-                minLength={3}
-                maxLength={3}
-                className="uppercase"
-                value={values.currency}
-                onChange={(event) => setValues((current) => ({ ...current, currency: event.target.value }))}
-              />
-            </Field>
-            <Field label="Time zone" htmlFor="store-timezone" error={fieldErrors?.timezone}>
-              <Input
-                id="store-timezone"
-                name="timezone"
-                required
-                value={values.timezone}
-                onChange={(event) => setValues((current) => ({ ...current, timezone: event.target.value }))}
-              />
-            </Field>
-          </div>
-          <Field label="Prices" htmlFor="store-pricing" error={fieldErrors?.pricing}>
-            <Select
-              name="pricing"
-              value={values.pricing}
-              onValueChange={(value) => setValues((current) => ({ ...current, pricing: value as PricingValue }))}
-            >
-              <SelectTrigger
-                id="store-pricing"
-                aria-describedby={fieldErrors?.pricing ? "store-pricing-error" : undefined}
-                aria-invalid={fieldErrors?.pricing ? true : undefined}
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="exclusive">Tax is added at checkout</SelectItem>
-                <SelectItem value="inclusive">Prices already include tax</SelectItem>
-              </SelectContent>
-            </Select>
-          </Field>
-          <DialogFooter>
-            <Button type="submit" variant="primary" size="md" disabled={pending}>
-              {pending ? "Saving…" : store ? "Save store" : "Add store"}
-            </Button>
-          </DialogFooter>
-        </form>
+        <StoreDialogForm key={openCount} store={store} onSaved={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
+  );
+}
+
+type StoreDialogFormProps = { store?: StoreWithRegisters; onSaved: () => void };
+
+function StoreDialogForm({ store, onSaved }: StoreDialogFormProps) {
+  const [state, action, pending] = useActionState<ActionResult, FormData>(async (prevState, formData) => {
+    const result = await saveStore(prevState, formData);
+    if (result?.ok) onSaved();
+    return result;
+  }, null);
+  const [values, setValues] = useState<StoreFormValues>(() => valuesFromStore(store));
+  const fieldErrors = state && !state.ok ? state.fieldErrors : undefined;
+
+  return (
+    <form action={action} className="flex flex-col gap-4 p-6">
+      <DialogHeader>
+        <DialogTitle>{store ? "Edit store" : "Add store"}</DialogTitle>
+        <DialogDescription>Currency and tax pricing apply to every sale in this store.</DialogDescription>
+      </DialogHeader>
+      <FormMessage result={state && !state.ok ? state : null} />
+      <input type="hidden" name="id" value={store?.id ?? ""} />
+      <Field label="Name" htmlFor="store-name" error={fieldErrors?.name}>
+        <Input
+          id="store-name"
+          name="name"
+          required
+          maxLength={120}
+          value={values.name}
+          onChange={(event) => setValues((current) => ({ ...current, name: event.target.value }))}
+        />
+      </Field>
+      <Field label="Address" htmlFor="store-address" error={fieldErrors?.address}>
+        <Input
+          id="store-address"
+          name="address"
+          maxLength={300}
+          value={values.address}
+          onChange={(event) => setValues((current) => ({ ...current, address: event.target.value }))}
+        />
+      </Field>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Currency" htmlFor="store-currency" error={fieldErrors?.currency}>
+          <Input
+            id="store-currency"
+            name="currency"
+            required
+            minLength={3}
+            maxLength={3}
+            className="uppercase"
+            value={values.currency}
+            onChange={(event) => setValues((current) => ({ ...current, currency: event.target.value }))}
+          />
+        </Field>
+        <Field label="Time zone" htmlFor="store-timezone" error={fieldErrors?.timezone}>
+          <Input
+            id="store-timezone"
+            name="timezone"
+            required
+            value={values.timezone}
+            onChange={(event) => setValues((current) => ({ ...current, timezone: event.target.value }))}
+          />
+        </Field>
+      </div>
+      <Field label="Prices" htmlFor="store-pricing" error={fieldErrors?.pricing}>
+        <Select
+          name="pricing"
+          value={values.pricing}
+          onValueChange={(value) => setValues((current) => ({ ...current, pricing: value as PricingValue }))}
+        >
+          <SelectTrigger
+            id="store-pricing"
+            aria-describedby={fieldErrors?.pricing ? "store-pricing-error" : undefined}
+            aria-invalid={fieldErrors?.pricing ? true : undefined}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="exclusive">Tax is added at checkout</SelectItem>
+            <SelectItem value="inclusive">Prices already include tax</SelectItem>
+          </SelectContent>
+        </Select>
+      </Field>
+      <DialogFooter>
+        <Button type="submit" variant="primary" size="md" disabled={pending}>
+          {pending ? "Saving…" : store ? "Save store" : "Add store"}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }

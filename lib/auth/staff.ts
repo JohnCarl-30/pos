@@ -20,18 +20,20 @@ export const getCurrentStaff = cache(async (): Promise<CurrentStaff | null> => {
   const userId = data?.claims?.sub;
   if (!userId) return null;
 
-  const { data: staff } = await supabase
+  const { data: staff, error: staffError } = await supabase
     .from("staff")
     .select("id, name, role")
     .eq("user_id", userId)
     .eq("active", true)
     .maybeSingle();
+  if (staffError) throw staffError;
   if (!staff) return null;
 
-  const { data: stores } = await supabase
+  const { data: stores, error: storesError } = await supabase
     .from("stores")
     .select("id, name, currency, prices_include_tax")
     .order("name");
+  if (storesError) throw storesError;
 
   return {
     id: staff.id,

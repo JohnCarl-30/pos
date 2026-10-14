@@ -1,7 +1,8 @@
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/auth/routes";
+import { relativeRedirect } from "@/lib/http/relative-redirect";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -17,7 +18,5 @@ export async function GET(request: NextRequest) {
       ? await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
       : { error: new Error("missing token") };
 
-  const target = error ? "/login?error=link-expired" : next;
-  const origin = `${request.nextUrl.protocol}//${request.headers.get("host") ?? request.nextUrl.host}`;
-  return NextResponse.redirect(new URL(target, origin));
+  return relativeRedirect(error ? "/login?error=link-expired" : next);
 }
