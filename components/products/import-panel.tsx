@@ -9,6 +9,7 @@ import { applyImport, previewImport, type ImportState } from "@/lib/catalog/impo
 import { cn } from "@/lib/utils";
 
 const EMPTY: ImportState = { preview: null, error: null, applied: null };
+const MAX_BYTES = 2_000_000;
 const STATUS_LABELS = { new: "New", update: "Update", unchanged: "No change", error: "Error" } as const;
 
 export default function ImportPanel() {
@@ -17,18 +18,29 @@ export default function ImportPanel() {
   const [previewState, preview, previewing] = useActionState(previewImport, EMPTY);
   const [applyState, apply, applying] = useActionState(applyImport, EMPTY);
   const [shown, setShown] = useState<"preview" | "apply">("preview");
+  const [previewedCsv, setPreviewedCsv] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   async function choose(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
+    setPreviewedCsv(null);
+    setShown("preview");
     if (!file) return;
+    if (file.size > MAX_BYTES) {
+      setFileError("The file is larger than 2 MB. Split it into smaller files.");
+      setCsv("");
+      return;
+    }
+    setFileError(null);
     setFileName(file.name);
     setCsv(await file.text());
-    setShown("preview");
   }
 
+  const stale = previewedCsv === null || previewedCsv !== csv;
   const state = shown === "apply" ? applyState : previewState;
-  const result = state.preview;
-  const canApply = Boolean(result && !result.fileError && result.summary.error === 0 && result.apply.length > 0);
+  const result = shown === "preview" && stale ? null : state.preview;
+  const error = fileError ?? (shown === "preview" && stale ? null : state.error);
+  const canApply = Boolean(!stale && result && !result.fileError && result.summary.error === 0 && result.apply.length > 0);
 
   return (
     <div className="flex flex-col gap-6 p-4">
@@ -36,7 +48,12 @@ export default function ImportPanel() {
         <span className="caption-style text-subtle">
           Columns: product, category, variant, sku, barcode, price, cost, tax_class, track, stock. Only product, sku and price are required. Existing SKUs are updated and nothing is deleted. Stock values become counts for the store you&apos;re viewing.
         </span>
-        <form action={preview} onSubmit={() => setShown("preview")} className="flex flex-wrap items-end gap-2">
+        <form
+          action={preview}
+          onSubmit={() => {
+            setShown("preview");
+            setPreviewedCsv(csv);
+          }} className="flex flex-wrap items-end gap-2">
           <div className="flex flex-col gap-2">
             <Label htmlFor="import-file">CSV file</Label>
             <Input id="import-file" type="file" accept=".csv,text/csv" onChange={choose} />
@@ -46,7 +63,7 @@ export default function ImportPanel() {
         </form>
       </div>
 
-      {state.error && <div role="alert" className="caption-style bg-danger/10 text-danger rounded-lg px-3 py-2">{state.error}</div>}
+      {error && <div role="alert" className="caption-style bg-danger/10 text-danger rounded-lg px-3 py-2">{error}</div>}
       {applyState.applied !== null && shown === "apply" && (
         <div role="status" className="caption-style bg-success/10 text-success rounded-lg px-3 py-2">
           Imported {applyState.applied} {applyState.applied === 1 ? "row" : "rows"} from {fileName}.
@@ -83,7 +100,11 @@ export default function ImportPanel() {
                   <TableCell>{row.product || "—"}</TableCell>
                   <TableCell>{row.sku || "—"}</TableCell>
                   <TableCell className={row.status === "error" ? "text-danger" : undefined}>
-                    {row.status === "error" ? row.errors.join(" · ") : STATUS_LABELS[row.status]}
+                    {row.status === "error"
+                      ? row.errors.join(" · ")
+                      : row.changes.length > 0
+                        ? `${STATUS_LABELS[row.status]}: ${row.changes.join(", ")}`
+                        : STATUS_LABELS[row.status]}
                   </TableCell>
                 </TableRow>
               ))}

@@ -50,13 +50,29 @@ export function parseHistoryFilters(params: Record<string, string | string[] | u
   };
 }
 
-export function dayRange(from: string, to: string): { gte?: string; lt?: string } {
+function offsetMinutes(utcMs: number, timeZone: string): number {
+  const label =
+    new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "longOffset" })
+      .formatToParts(new Date(utcMs))
+      .find((part) => part.type === "timeZoneName")?.value ?? "GMT";
+  const match = /GMT([+-])(\d{2}):?(\d{2})?/.exec(label);
+  if (!match) return 0;
+  return (match[1] === "-" ? -1 : 1) * (Number(match[2]) * 60 + Number(match[3] ?? 0));
+}
+
+function zonedMidnight(date: string, timeZone: string): Date {
+  const utc = Date.parse(`${date}T00:00:00Z`);
+  const first = utc - offsetMinutes(utc, timeZone) * 60_000;
+  return new Date(utc - offsetMinutes(first, timeZone) * 60_000);
+}
+
+export function dayRange(from: string, to: string, timeZone = "UTC"): { gte?: string; lt?: string } {
   const range: { gte?: string; lt?: string } = {};
-  if (from) range.gte = new Date(`${from}T00:00:00Z`).toISOString();
+  if (from) range.gte = zonedMidnight(from, timeZone).toISOString();
   if (to) {
-    const end = new Date(`${to}T00:00:00Z`);
-    end.setUTCDate(end.getUTCDate() + 1);
-    range.lt = end.toISOString();
+    const next = new Date(`${to}T00:00:00Z`);
+    next.setUTCDate(next.getUTCDate() + 1);
+    range.lt = zonedMidnight(next.toISOString().slice(0, 10), timeZone).toISOString();
   }
   return range;
 }

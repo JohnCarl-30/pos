@@ -93,7 +93,9 @@ begin
     if coalesce(trim(v_row->>'category'), '') <> '' then
       select id into v_category_id from public.categories where lower(name) = lower(trim(v_row->>'category'));
       if v_category_id is null then
-        insert into public.categories (name) values (trim(v_row->>'category')) returning id into v_category_id;
+        insert into public.categories (name, sort_order)
+        values (trim(v_row->>'category'), (select coalesce(max(sort_order) + 1, 0) from public.categories))
+        returning id into v_category_id;
       end if;
     end if;
 
@@ -103,14 +105,14 @@ begin
     if v_variant_id is not null then
       update public.products set
         name = v_row->>'product',
-        category_id = v_category_id,
-        tax_class_id = (v_row->>'tax_class_id')::uuid
+        category_id = case when v_row ? 'category' then v_category_id else category_id end,
+        tax_class_id = case when v_row ? 'tax_class_id' then (v_row->>'tax_class_id')::uuid else tax_class_id end
       where id = v_product_id;
       update public.product_variants set
-        name = v_row->>'variant',
-        barcode = nullif(v_row->>'barcode', ''),
+        name = case when v_row ? 'variant' then v_row->>'variant' else name end,
+        barcode = case when v_row ? 'barcode' then nullif(v_row->>'barcode', '') else barcode end,
         price = (v_row->>'price')::bigint,
-        cost = nullif(v_row->>'cost', '')::bigint
+        cost = case when v_row ? 'cost' then nullif(v_row->>'cost', '')::bigint else cost end
       where id = v_variant_id;
     else
       select id into v_product_id from public.products
@@ -124,7 +126,7 @@ begin
       insert into public.product_variants (product_id, name, sku, barcode, price, cost, sort_order)
       values (
         v_product_id,
-        v_row->>'variant',
+        coalesce(v_row->>'variant', 'Default'),
         v_row->>'sku',
         nullif(v_row->>'barcode', ''),
         (v_row->>'price')::bigint,

@@ -8,6 +8,7 @@ import HistoryFiltersBar from "@/components/products/history-filters";
 import Pagination from "@/components/products/pagination";
 import { getCurrentStore, requireRole } from "@/lib/auth/staff";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/supabase/fetch-all";
 import { HISTORY_PAGE_SIZE, STOCK_REASON_LABELS, dayRange, formatChange, parseHistoryFilters, type StockReason } from "@/lib/catalog/history";
 
 export const metadata: Metadata = { title: "Stock history" };
@@ -35,10 +36,10 @@ export default async function StockHistoryPage({ searchParams }: StockHistoryPag
   if (filters.q) {
     const pattern = `%${filters.q.replace(/[%_]/g, "")}%`;
     const [bySku, byProduct] = await Promise.all([
-      supabase.from("product_variants").select("id").ilike("sku", pattern),
-      supabase.from("product_variants").select("id, product:products!inner(name)").ilike("product.name", pattern),
+      fetchAll((start, end) => supabase.from("product_variants").select("id").ilike("sku", pattern).order("id").range(start, end)),
+      fetchAll((start, end) => supabase.from("product_variants").select("id, product:products!inner(name)").ilike("product.name", pattern).order("id").range(start, end)),
     ]);
-    variantIds = [...new Set([...(bySku.data ?? []), ...(byProduct.data ?? [])].map((row) => row.id))];
+    variantIds = [...new Set([...bySku, ...byProduct].map((row) => row.id))];
   }
 
   const from = (filters.page - 1) * HISTORY_PAGE_SIZE;
@@ -49,7 +50,9 @@ export default async function StockHistoryPage({ searchParams }: StockHistoryPag
     .order("created_at", { ascending: false })
     .range(from, from + HISTORY_PAGE_SIZE - 1);
   if (filters.reason) query = query.eq("reason", filters.reason);
-  const range = dayRange(filters.from, filters.to);
+  const { data: storeRow } = store ? await supabase.from("stores").select("timezone").eq("id", store.id).maybeSingle() : { data: null };
+  const timeZone = storeRow?.timezone ?? "UTC";
+  const range = dayRange(filters.from, filters.to, timeZone);
   if (range.gte) query = query.gte("created_at", range.gte);
   if (range.lt) query = query.lt("created_at", range.lt);
   if (variantIds) query = query.in("variant_id", variantIds.length ? variantIds : ["00000000-0000-0000-0000-000000000000"]);
@@ -58,7 +61,7 @@ export default async function StockHistoryPage({ searchParams }: StockHistoryPag
   const rows = (data ?? []) as unknown as HistoryRow[];
   const total = count ?? 0;
   const pages = Math.max(1, Math.ceil(total / HISTORY_PAGE_SIZE));
-  const dateFormat = new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" });
+  const dateFormat = new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short", timeZone });
 
   const hrefFor = (page: number) => {
     const next = new URLSearchParams();

@@ -8,6 +8,9 @@ describe("toCsv", () => {
   it("neutralises spreadsheet formulas", () => {
     expect(toCsv([["=SUM(A1)", "+1", "-2", "@x"]])).toBe("'=SUM(A1),'+1,'-2,'@x");
   });
+  it("leaves numbers unescaped so negative stock round-trips", () => {
+    expect(toCsv([[-5, "-5"]])).toBe("-5,'-5");
+  });
   it("writes numbers, booleans and empty cells", () => {
     expect(toCsv([[1250, true, null], ["x", false, ""]])).toBe("1250,true,\r\nx,false,");
   });

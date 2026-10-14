@@ -14,7 +14,7 @@ const ctx: ImportContext = {
     { name: "Old Muffin", active: false },
   ],
   variants: [
-    { sku: "LAT-S", name: "Small", barcode: "111", price: 420, cost: 110, track: true, productName: "Latte", categoryName: "Coffee", taxClassId: "t-std" },
+    { sku: "LAT-S", name: "Small", barcode: "111", price: 420, cost: 110, track: true, productName: "Latte", categoryName: "Coffee", taxClassId: "t-std", quantity: 7 },
   ],
 };
 
@@ -95,6 +95,35 @@ describe("validateImport", () => {
 
   it("matches headers case-insensitively and accepts missing optional columns", () => {
     const preview = validateImport(["Product", "SKU", "Price"], [["Scone", "SC", "2"]], ctx);
-    expect(preview.apply[0]).toMatchObject({ product: "Scone", variant: "Default", sku: "SC", price: 200, track: null, stock: null, category: null });
+    expect(preview.apply[0]).toEqual({ product: "Scone", variant: "Default", sku: "SC", price: 200, tax_class_id: "t-std" });
+  });
+
+  it("only touches the columns a file has for existing SKUs", () => {
+    const preview = validateImport(["product", "sku", "price"], [["Latte", "LAT-S", "4,50"]], ctx);
+    expect(preview.rows[0]).toMatchObject({ status: "update", changes: ["price"] });
+    expect(preview.apply[0]).toEqual({ product: "Latte", sku: "LAT-S", price: 450 });
+  });
+
+  it("treats an unchanged stock count as no change and shows a stock change", () => {
+    const same = validateImport(["product", "sku", "price", "stock"], [["Latte", "LAT-S", "4,20", "7"]], ctx);
+    expect(same.rows[0].status).toBe("unchanged");
+    const changed = validateImport(["product", "sku", "price", "stock"], [["Latte", "LAT-S", "4,20", "5"]], ctx);
+    expect(changed.rows[0]).toMatchObject({ status: "update", changes: ["stock 7 → 5"] });
+  });
+
+  it("strips the formula guard that export adds", () => {
+    const preview = validateImport(["product", "sku", "price"], [["'=Odd", "'-100", "1"]], ctx);
+    expect(preview.apply[0]).toMatchObject({ product: "=Odd", sku: "-100" });
+  });
+
+  it("rejects values longer than the database allows", () => {
+    const preview = validateImport(["product", "sku", "price", "barcode"], [["P", "S".repeat(65), "1", "B".repeat(65)]], ctx);
+    expect(preview.rows[0].errors).toEqual(["SKU must be 64 characters or fewer", "Barcode must be 64 characters or fewer"]);
+  });
+
+  it("accepts an exported negative count when it hasn't changed", () => {
+    const negative = { ...ctx, variants: [{ ...ctx.variants[0], quantity: -2 }] };
+    expect(validateImport(["product", "sku", "price", "stock"], [["Latte", "LAT-S", "4,20", "-2"]], negative).rows[0].status).toBe("unchanged");
+    expect(validateImport(["product", "sku", "price", "stock"], [["Latte", "LAT-S", "4,20", "-3"]], negative).rows[0].errors).toEqual(["Stock must be a whole number of 0 or more"]);
   });
 });

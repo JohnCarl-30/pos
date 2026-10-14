@@ -1,7 +1,9 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
+import { fetchAll } from "@/lib/supabase/fetch-all";
 import { toProductRows, type ProductQueryRow, type ProductRow } from "./list";
+import type { ExportQueryRow } from "./export";
 
 type Client = SupabaseClient<Database>;
 
@@ -12,13 +14,15 @@ export const EXPORT_SELECT =
   "id, name, category:categories(name), tax_class:tax_classes(name), product_variants(name, sku, barcode, price, cost, active, sort_order, stock_levels(store_id, quantity, track))";
 
 export async function loadProductRows(supabase: Client, storeId: string): Promise<ProductRow[]> {
-  const { data, error } = await supabase.from("products").select(PRODUCT_LIST_SELECT).order("name");
-  if (error) throw error;
-  return toProductRows((data ?? []) as unknown as ProductQueryRow[], storeId);
+  const data = await fetchAll((from, to) => supabase.from("products").select(PRODUCT_LIST_SELECT).order("name").order("id").range(from, to));
+  return toProductRows(data as unknown as ProductQueryRow[], storeId);
+}
+
+export async function loadExportRows(supabase: Client): Promise<ExportQueryRow[]> {
+  const data = await fetchAll((from, to) => supabase.from("products").select(EXPORT_SELECT).order("name").order("id").range(from, to));
+  return data as unknown as ExportQueryRow[];
 }
 
 export async function loadCategories(supabase: Client) {
-  const { data, error } = await supabase.from("categories").select("id, name, sort_order").order("sort_order").order("name");
-  if (error) throw error;
-  return data ?? [];
+  return fetchAll((from, to) => supabase.from("categories").select("id, name, sort_order").order("sort_order").order("name").order("id").range(from, to));
 }

@@ -38,4 +38,9 @@ describe("dayRange", () => {
     expect(dayRange("2026-10-01", "2026-10-14")).toEqual({ gte: "2026-10-01T00:00:00.000Z", lt: "2026-10-15T00:00:00.000Z" });
     expect(dayRange("", "")).toEqual({});
   });
+  it("uses the store's timezone for day boundaries", () => {
+    expect(dayRange("2026-10-14", "2026-10-14", "Asia/Manila")).toEqual({ gte: "2026-10-13T16:00:00.000Z", lt: "2026-10-14T16:00:00.000Z" });
+    expect(dayRange("2026-07-01", "", "America/Chicago")).toEqual({ gte: "2026-07-01T05:00:00.000Z" });
+    expect(dayRange("2026-01-15", "", "America/Chicago")).toEqual({ gte: "2026-01-15T06:00:00.000Z" });
+  });
 });

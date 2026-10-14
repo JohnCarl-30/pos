@@ -11,7 +11,7 @@ export type ImportContextRaw = {
     price: number;
     cost: number | null;
     product: { name: string; tax_class_id: string; category: { name: string } | null } | null;
-    stock_levels: { store_id: string; track: boolean }[];
+    stock_levels: { store_id: string; track: boolean; quantity: number }[];
   }[];
 };
 
@@ -29,6 +29,7 @@ export function buildImportContext(raw: ImportContextRaw, storeId: string, curre
       price: variant.price,
       cost: variant.cost,
       track: variant.stock_levels.find((level) => level.store_id === storeId)?.track ?? true,
+      quantity: variant.stock_levels.find((level) => level.store_id === storeId)?.quantity ?? 0,
       productName: variant.product?.name ?? "",
       categoryName: variant.product?.category?.name ?? null,
       taxClassId: variant.product?.tax_class_id ?? "",

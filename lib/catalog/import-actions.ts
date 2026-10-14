@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentStore, requireRole } from "@/lib/auth/staff";
 import { createClient } from "@/lib/supabase/server";
 import { CsvError, parseCsv } from "@/lib/csv";
+import { fetchAll } from "@/lib/supabase/fetch-all";
 import { catalogDbError } from "./db-errors";
 import { validateImport, type ImportPreview } from "./import";
 import { buildImportContext, type ImportContextRaw } from "./import-context";
@@ -28,21 +29,24 @@ async function prepare(formData: FormData): Promise<{ error: string } | { previe
   }
 
   const supabase = await createClient();
-  const [taxClasses, categories, products, variants] = await Promise.all([
-    supabase.from("tax_classes").select("id, name, is_default"),
-    supabase.from("categories").select("name"),
-    supabase.from("products").select("name, active"),
-    supabase.from("product_variants").select("sku, name, barcode, price, cost, product:products(name, tax_class_id, category:categories(name)), stock_levels(store_id, track)"),
-  ]);
-  const failed = taxClasses.error ?? categories.error ?? products.error ?? variants.error;
-  if (failed) return { error: catalogDbError(failed) };
-
-  const raw = {
-    taxClasses: taxClasses.data ?? [],
-    categories: categories.data ?? [],
-    products: products.data ?? [],
-    variants: (variants.data ?? []) as unknown as ImportContextRaw["variants"],
-  };
+  let raw: ImportContextRaw;
+  try {
+    const [taxClasses, categories, products, variants] = await Promise.all([
+      fetchAll((from, to) => supabase.from("tax_classes").select("id, name, is_default").order("id").range(from, to)),
+      fetchAll((from, to) => supabase.from("categories").select("name").order("id").range(from, to)),
+      fetchAll((from, to) => supabase.from("products").select("name, active").order("id").range(from, to)),
+      fetchAll((from, to) =>
+        supabase
+          .from("product_variants")
+          .select("sku, name, barcode, price, cost, product:products(name, tax_class_id, category:categories(name)), stock_levels(store_id, track, quantity)")
+          .order("id")
+          .range(from, to),
+      ),
+    ]);
+    raw = { taxClasses, categories, products, variants: variants as unknown as ImportContextRaw["variants"] };
+  } catch (error) {
+    return { error: catalogDbError(error as { code?: string; message?: string }) };
+  }
   return { preview: validateImport(parsed.header, parsed.rows, buildImportContext(raw, store.id, store.currency)), storeId: store.id };
 }
 

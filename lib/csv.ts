@@ -4,6 +4,7 @@ export class CsvError extends Error {}
 
 function escapeCell(cell: CsvCell): string {
   if (cell === null) return "";
+  if (typeof cell === "number") return String(cell);
   let value = String(cell);
   if (/^[=+\-@\t\r]/.test(value)) value = `'${value}`;
   if (/[",\r\n]/.test(value)) value = `"${value.replace(/"/g, '""')}"`;

@@ -15,7 +15,7 @@ function CategoryRow({ category, index, last }: { category: Category; index: num
   const [name, setName] = useState(category.name);
   const [prevName, setPrevName] = useState(category.name);
   const [saveState, saveAction, saving] = useActionState<ActionResult, FormData>(saveCategory, null);
-  const [, moveAction, moving] = useActionState<ActionResult, FormData>(moveCategory, null);
+  const [moveState, moveAction, moving] = useActionState<ActionResult, FormData>(moveCategory, null);
   const [deleteState, deleteAction, deleting] = useActionState<ActionResult, FormData>(deleteCategory, null);
 
   if (category.name !== prevName) {
@@ -23,7 +23,7 @@ function CategoryRow({ category, index, last }: { category: Category; index: num
     setName(category.name);
   }
 
-  const error = (saveState && !saveState.ok ? saveState.fieldErrors?.name ?? saveState.error : undefined) ?? (deleteState && !deleteState.ok ? deleteState.error : undefined);
+  const error = (saveState && !saveState.ok ? saveState.fieldErrors?.name ?? saveState.error : undefined) ?? (deleteState && !deleteState.ok ? deleteState.error : undefined) ?? (moveState && !moveState.ok ? moveState.error : undefined);
 
   return (
     <li className="flex flex-col gap-1 px-3 py-2">

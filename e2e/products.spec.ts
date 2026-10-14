@@ -64,6 +64,7 @@ test("CSV import previews errors and applies a clean file", async ({ page }) => 
 
   const good = "product;sku;price\nE2E Scone;E2E-SCONE;2,00\nE2E Bun;E2E-BUN;1,50\n";
   await page.getByLabel("CSV file").setInputFiles({ name: "good.csv", mimeType: "text/csv", buffer: Buffer.from(good) });
+  await expect(page.getByRole("button", { name: /^Import/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Preview" }).click();
   await expect(page.getByText("2 new · 0 updated · 0 unchanged · 0 errors")).toBeVisible();
   await page.getByRole("button", { name: "Import 2 rows" }).click();

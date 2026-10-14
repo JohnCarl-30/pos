@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(15);
 
 truncate table public.business, public.stores, public.staff, public.tax_classes,
   public.categories, public.products, public.customers restart identity cascade;
@@ -62,6 +62,15 @@ select is((select price from public.product_variants where sku = 'LAT-S'), 450::
 select is((select count(*) from public.product_variants v join public.products p on p.id = v.product_id where p.name = 'Croissant'), 2::bigint, 'rows with one product name become one product');
 select is((select count(*) from public.categories where name in ('Coffee', 'Bakery')), 2::bigint, 'missing categories are created');
 select is((select quantity from public.stock_levels sl join public.product_variants v on v.id = sl.variant_id where v.sku = 'CRO'), 12, 'a stock value becomes a count');
+select lives_ok(
+  $$select public.import_catalog('00000000-0000-0000-0000-0000000000b1', '[{"product":"Latte","sku":"LAT-L","price":600}]'::jsonb)$$,
+  'a price-only row updates an existing SKU'
+);
+select is(
+  (select row(price, barcode, cost, name)::text from public.product_variants where sku = 'LAT-L'),
+  row(600::bigint, '111'::text, 140::bigint, 'Large'::text)::text,
+  'columns missing from the file are left unchanged'
+);
 select throws_ok(
   $$select public.import_catalog('00000000-0000-0000-0000-0000000000b1', '[
     {"product":"Bagel","variant":"Default","sku":"BAG","price":300,"tax_class_id":"00000000-0000-0000-0000-0000000000e1"},

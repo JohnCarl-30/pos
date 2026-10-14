@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(15);
 
 truncate table public.business, public.stores, public.staff, public.tax_classes,
   public.categories, public.products, public.customers restart identity cascade;
@@ -40,11 +40,19 @@ select throws_ok(
   $$select public.transfer_stock('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000b2', '00000000-0000-0000-0000-0000000000f2', 2)$$,
   '42501', null, 'a manager cannot transfer to a store they do not manage'
 );
+select throws_ok(
+  $$select public.transfer_stock('00000000-0000-0000-0000-0000000000b2', '00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000f2', 2)$$,
+  '42501', null, 'a manager cannot transfer out of a store they do not manage'
+);
 
 reset role;
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000a3","role":"authenticated"}';
 select throws_ok($$select public.record_stock_count('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000f2', 1)$$, 'P0002', null, 'a cashier cannot count stock');
+select throws_ok(
+  $$select public.transfer_stock('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000b2', '00000000-0000-0000-0000-0000000000f2', 1)$$,
+  '42501', null, 'a cashier cannot transfer stock'
+);
 
 reset role;
 set local role authenticated;
