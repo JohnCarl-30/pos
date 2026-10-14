@@ -102,7 +102,7 @@ Per line, after the discount, using the variant's product tax class and the stor
 - **Execute grants:** revoked from `public` and `anon` on all three functions, granted to `authenticated`.
 
 ### Existing policies
-Sales still can't be inserted row-by-row except through these functions. The old policies stay as defense in depth, and `create_order` is the only path the app uses.
+The foundation's policies still let staff insert `orders`, `order_items` and `payments` rows directly, which would let a tampered client record a sale with made-up totals. This migration revokes `insert` on those three tables from `authenticated`, so `create_order` (security definer) becomes the only way to record a sale. The pgTAP tests assert that a direct insert fails. The read and manager-update policies are unchanged.
 
 ## B. Register screen (`/register`, all roles)
 
