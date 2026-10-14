@@ -25,7 +25,10 @@ export async function createStaff(_: ActionResult, formData: FormData): Promise<
     user_metadata: { name: input.name },
   });
   if (userError || !created.user) {
-    return { ok: false, fieldErrors: { email: userError?.message ?? "Couldn't create this login." } };
+    return {
+      ok: false,
+      fieldErrors: { email: "Couldn't create an account with this email. If it's already registered, use a different email." },
+    };
   }
 
   const supabase = await createClient();
@@ -35,7 +38,8 @@ export async function createStaff(_: ActionResult, formData: FormData): Promise<
     .select("id")
     .single();
   if (error || !staff) {
-    await admin.auth.admin.deleteUser(created.user.id);
+    const { error: deleteUserError } = await admin.auth.admin.deleteUser(created.user.id);
+    if (deleteUserError) console.error("createStaff: failed to delete the auth user after a failed staff insert", deleteUserError);
     return { ok: false, error: friendlyDbError(error) };
   }
 
@@ -46,12 +50,11 @@ export async function createStaff(_: ActionResult, formData: FormData): Promise<
     p_store_ids: input.storeIds,
   });
   if (accessError) {
-    await supabase.from("staff").delete().eq("id", staff.id);
-    await admin.auth.admin.deleteUser(created.user.id);
-    return {
-      ok: false,
-      error: accessError.code === "P0002" ? STAFF_NOT_FOUND : friendlyDbError(accessError),
-    };
+    const { error: deleteStaffError } = await supabase.from("staff").delete().eq("id", staff.id);
+    if (deleteStaffError) console.error("createStaff: failed to delete the staff row after a failed access grant", deleteStaffError);
+    const { error: deleteUserError } = await admin.auth.admin.deleteUser(created.user.id);
+    if (deleteUserError) console.error("createStaff: failed to delete the auth user after a failed access grant", deleteUserError);
+    return { ok: false, error: friendlyDbError(accessError) };
   }
 
   revalidatePath("/settings/staff");
