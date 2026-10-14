@@ -23,7 +23,7 @@ function CloseTillForm({ sessionId, currency, money, onClosed, onDone }: CloseTi
   );
 
   if (state.summary) {
-    const { expected_cash, counted_cash, difference } = state.summary;
+    const { cash_refunds, voided_count, expected_cash, counted_cash, difference } = state.summary;
     return (
       <div className="flex flex-col gap-4 p-6">
         <DialogHeader>
@@ -31,6 +31,8 @@ function CloseTillForm({ sessionId, currency, money, onClosed, onDone }: CloseTi
           <DialogDescription>Here&apos;s how the drawer compares with today&apos;s cash sales.</DialogDescription>
         </DialogHeader>
         <dl className="flex flex-col gap-1">
+          {cash_refunds > 0 && <div className="flex justify-between"><dt>Cash refunds</dt><dd>−{money(cash_refunds)}</dd></div>}
+          {voided_count > 0 && <div className="flex justify-between"><dt>Voided sales</dt><dd>{voided_count}</dd></div>}
           <div className="flex justify-between"><dt>Expected</dt><dd>{money(expected_cash)}</dd></div>
           <div className="flex justify-between"><dt>Counted</dt><dd>{money(counted_cash)}</dd></div>
           <div className={difference === 0 ? "flex justify-between" : "text-warning flex justify-between"}>
