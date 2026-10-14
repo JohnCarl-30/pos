@@ -6,7 +6,7 @@ A free, open-source point of sale for shops, cafés and restaurants. Self-host i
 
 ## Quick start
 
-You need Node 20+, Docker Desktop, and npm.
+You need Node 20.9 or newer, Docker Desktop, and npm.
 
 ```bash
 npm install
@@ -31,6 +31,7 @@ To try the first-run setup instead, run `npx supabase db reset --no-seed` and op
 | Script | What it does |
 | --- | --- |
 | `npm run dev` | Start the app |
+| `npm run lint` | Lint the code with ESLint |
 | `npm test` | Unit tests (money, tax, routing, validation) |
 | `npm run test:db` | Database tests: schema and access rules (pgTAP) |
 | `npm run test:e2e` | End-to-end tests (resets the local database; run `npx playwright install chromium` once first) |
@@ -40,8 +41,11 @@ To try the first-run setup instead, run `npx supabase db reset --no-seed` and op
 ## Deploying
 
 1. Create a Supabase project. Run `npx supabase link --project-ref <ref>` then `npx supabase db push` (this does not load demo data).
-2. Deploy the Next.js app anywhere that runs Node (Vercel works out of the box). Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SERVICE_ROLE_KEY`.
-3. Open the site. You'll be taken to setup to create your business, first store and owner account.
+2. In Supabase Auth settings, turn off "Allow new users to sign up". Staff accounts are created from Settings, never by public sign-up.
+3. Deploy the Next.js app anywhere that runs Node (Vercel works out of the box). Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SERVICE_ROLE_KEY`.
+4. Open the site. You'll be taken to setup to create your business, first store and owner account.
+
+> The first person to open a fresh deployment completes setup and becomes owner — finish setup immediately after deploying.
 
 ## How it's built
 
@@ -54,4 +58,4 @@ Next.js 16, React 19, Tailwind 4 and Supabase (Postgres, Auth, row-level securit
 
 ## License
 
-MIT
+MIT. The starter UI is © Kargul Studio, also MIT.

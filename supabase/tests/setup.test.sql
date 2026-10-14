@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(10);
 
 truncate table public.business, public.stores, public.staff, public.tax_classes,
   public.categories, public.products, public.customers restart identity cascade;
@@ -45,6 +45,11 @@ reset role;
 set local role anon;
 select is(public.setup_status(), true, 'setup reports complete');
 reset role;
+
+select throws_ok(
+  $$update public.business set setup_completed_at = null$$,
+  'P0001', 'setup_completed_at cannot change once setup is complete', 'setup cannot be marked incomplete again'
+);
 
 select * from finish();
 rollback;

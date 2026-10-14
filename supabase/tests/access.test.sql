@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(36);
+select plan(37);
 
 truncate table public.business, public.stores, public.staff, public.tax_classes,
   public.categories, public.products, public.customers restart identity cascade;
@@ -111,6 +111,7 @@ select is((select count(*) from public.stores), 2::bigint, 'owner sees every sto
 select is((select count(*) from public.orders), 2::bigint, 'owner sees every order');
 select lives_ok($$insert into public.stores (name, currency) values ('Store C', 'EUR')$$, 'owner can add stores');
 with u as (update public.staff set role = 'manager' where id = '00000000-0000-0000-0000-0000000000c3' returning 1) select is(count(*), 1::bigint, 'owner can change staff roles') from u;
+with d as (delete from public.business returning 1) select is(count(*), 0::bigint, 'owner cannot delete the business') from d;
 
 reset role;
 set local role authenticated;

@@ -74,8 +74,10 @@ grant execute on all functions in schema private to authenticated;
 
 create policy "staff read business" on public.business
   for select to authenticated using ((select private.staff_id()) is not null);
-create policy "owner manages business" on public.business
-  for all to authenticated using ((select private.staff_role()) = 'owner');
+create policy "owner updates business" on public.business
+  for update to authenticated
+  using ((select private.staff_role()) = 'owner')
+  with check ((select private.staff_role()) = 'owner');
 
 create policy "staff read their stores" on public.stores
   for select to authenticated using (private.can_access_store(id));

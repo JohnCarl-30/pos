@@ -61,3 +61,20 @@ $$;
 
 revoke execute on function public.complete_setup(uuid, text, text, text, text, text, boolean, integer, text) from public, anon, authenticated;
 grant execute on function public.complete_setup(uuid, text, text, text, text, text, boolean, integer, text) to service_role;
+
+create function private.keep_setup_completed()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if old.setup_completed_at is not null and new.setup_completed_at is distinct from old.setup_completed_at then
+    raise exception 'setup_completed_at cannot change once setup is complete' using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger keep_setup_completed
+  before update on public.business
+  for each row execute function private.keep_setup_completed();
