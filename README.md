@@ -33,7 +33,7 @@ To try the first-run setup instead, run `npx supabase db reset --no-seed` and op
 | `npm run dev` | Start the app |
 | `npm test` | Unit tests (money, tax, routing, validation) |
 | `npm run test:db` | Database tests: schema and access rules (pgTAP) |
-| `npm run test:e2e` | End-to-end tests (resets the local database) |
+| `npm run test:e2e` | End-to-end tests (resets the local database; run `npx playwright install chromium` once first) |
 | `npm run db:reset` | Rebuild the local database with demo data |
 | `npm run db:types` | Regenerate TypeScript types from the schema |
 

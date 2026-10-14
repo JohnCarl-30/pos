@@ -125,13 +125,17 @@ export default function SetupWizard() {
             onChange={update("currency")}
           />
         </Field>
-        <Field label="Prices on your menu or shelf" htmlFor="pricing">
+        <Field label="Prices on your menu or shelf" htmlFor="pricing" error={fieldErrors?.pricing}>
           <Select
             name="pricing"
             value={values.pricing}
             onValueChange={(value) => setValues((current) => ({ ...current, pricing: value }))}
           >
-            <SelectTrigger id="pricing">
+            <SelectTrigger
+              id="pricing"
+              aria-describedby={fieldErrors?.pricing ? "pricing-error" : undefined}
+              aria-invalid={fieldErrors?.pricing ? true : undefined}
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

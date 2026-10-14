@@ -62,3 +62,12 @@ test("an owner cannot deactivate themself", async ({ page }) => {
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page.getByRole("dialog").getByRole("alert")).toHaveText("You can't deactivate your own account.");
 });
+
+test("signing out ends the session", async ({ page }) => {
+  await signIn(page, "cashier@demo.test");
+  await expect(page).toHaveURL(/\/register$/);
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.goto("/register");
+  await expect(page).toHaveURL(/\/login\?next=%2Fregister$/);
+});

@@ -137,7 +137,7 @@ function StaffDialogForm({ member, stores, onSaved }: StaffDialogFormProps) {
           value={values.role}
           onValueChange={(value) => setValues((current) => ({ ...current, role: value as StaffRole }))}
         >
-          <SelectTrigger id="staff-role">
+          <SelectTrigger id="staff-role" aria-describedby="staff-role-hint">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

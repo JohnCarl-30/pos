@@ -108,13 +108,17 @@ export default function StoreDialog({ store, trigger }: StoreDialogProps) {
               />
             </Field>
           </div>
-          <Field label="Prices" htmlFor="store-pricing">
+          <Field label="Prices" htmlFor="store-pricing" error={fieldErrors?.pricing}>
             <Select
               name="pricing"
               value={values.pricing}
               onValueChange={(value) => setValues((current) => ({ ...current, pricing: value as PricingValue }))}
             >
-              <SelectTrigger id="store-pricing">
+              <SelectTrigger
+                id="store-pricing"
+                aria-describedby={fieldErrors?.pricing ? "store-pricing-error" : undefined}
+                aria-invalid={fieldErrors?.pricing ? true : undefined}
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
