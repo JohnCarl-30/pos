@@ -1,0 +1,15 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+select plan(8);
+
+select is(private.price_cart(false, '[{"price":300,"quantity":2,"rate_bps":1000,"discount_bps":null,"discount_amount":null}]'::jsonb, null), '{"subtotal":600,"discount_total":0,"tax_total":60,"total":660,"lines":[{"discount":0,"tax":60,"line_total":660}]}'::jsonb, 'tax added on top');
+select is(private.price_cart(false, '[{"price":1250,"quantity":1,"rate_bps":1000,"discount_bps":1000,"discount_amount":null}]'::jsonb, null), '{"subtotal":1250,"discount_total":125,"tax_total":112,"total":1237,"lines":[{"discount":125,"tax":112,"line_total":1237}]}'::jsonb, 'line percentage discount before tax, half-even tax');
+select is(private.price_cart(true, '[{"price":300,"quantity":1,"rate_bps":1000,"discount_bps":null,"discount_amount":null}]'::jsonb, null), '{"subtotal":300,"discount_total":0,"tax_total":27,"total":300,"lines":[{"discount":0,"tax":27,"line_total":300}]}'::jsonb, 'prices include tax');
+select is(private.price_cart(false, '[{"price":300,"quantity":1,"rate_bps":1000,"discount_bps":null,"discount_amount":null},{"price":1250,"quantity":1,"rate_bps":1000,"discount_bps":null,"discount_amount":null}]'::jsonb, '{"bps":null,"amount":100}'::jsonb), '{"subtotal":1550,"discount_total":100,"tax_total":145,"total":1595,"lines":[{"discount":19,"tax":28,"line_total":309},{"discount":81,"tax":117,"line_total":1286}]}'::jsonb, 'whole-sale amount split by largest remainder');
+select is(private.price_cart(false, '[{"price":300,"quantity":1,"rate_bps":0,"discount_bps":null,"discount_amount":50},{"price":200,"quantity":1,"rate_bps":0,"discount_bps":null,"discount_amount":null}]'::jsonb, '{"bps":1000,"amount":null}'::jsonb), '{"subtotal":500,"discount_total":95,"tax_total":0,"total":405,"lines":[{"discount":75,"tax":0,"line_total":225},{"discount":20,"tax":0,"line_total":180}]}'::jsonb, 'line amount then whole-sale percentage');
+select is(private.price_cart(false, '[{"price":100,"quantity":1,"rate_bps":0,"discount_bps":null,"discount_amount":null},{"price":100,"quantity":1,"rate_bps":0,"discount_bps":null,"discount_amount":null}]'::jsonb, '{"bps":null,"amount":1}'::jsonb), '{"subtotal":200,"discount_total":1,"tax_total":0,"total":199,"lines":[{"discount":1,"tax":0,"line_total":99},{"discount":0,"tax":0,"line_total":100}]}'::jsonb, 'tied remainders go to the earlier line');
+select is(private.price_cart(false, '[{"price":300,"quantity":1,"rate_bps":1000,"discount_bps":null,"discount_amount":null}]'::jsonb, '{"bps":10000,"amount":null}'::jsonb), '{"subtotal":300,"discount_total":300,"tax_total":0,"total":0,"lines":[{"discount":300,"tax":0,"line_total":0}]}'::jsonb, 'a full discount makes the sale free');
+select is(private.price_cart(false, '[{"price":333,"quantity":3,"rate_bps":825,"discount_bps":1500,"discount_amount":null}]'::jsonb, null), '{"subtotal":999,"discount_total":150,"tax_total":70,"total":919,"lines":[{"discount":150,"tax":70,"line_total":919}]}'::jsonb, 'percentage discount rounds half-even');
+
+select * from finish();
+rollback;
