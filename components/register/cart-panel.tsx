@@ -54,7 +54,7 @@ export default function CartPanel(props: CartPanelProps) {
                     </span>
                     {isOverStock(line) && <span className="caption-style text-warning">Only {Math.max(0, line.stock)} in stock</span>}
                   </div>
-                  <span>{priced ? money(priced.lines[index].lineTotal) : ""}</span>
+                  <span className="tabular-nums">{priced ? money(priced.lines[index].lineTotal) : ""}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button variant="secondary" size="md" className="min-h-11 min-w-11" aria-label={`One less ${line.label}`} onClick={() => props.onQuantity(line.variantId, line.quantity - 1)}>−</Button>
@@ -83,7 +83,7 @@ export default function CartPanel(props: CartPanelProps) {
         </div>
         {props.error && <span role="alert" className="caption-style text-danger">{props.error}</span>}
         {priced && (
-          <dl className="flex flex-col gap-1">
+          <dl className="flex flex-col gap-1 tabular-nums">
             <div className="flex justify-between"><dt>Subtotal</dt><dd>{money(priced.subtotal)}</dd></div>
             {priced.discountTotal > 0 && <div className="flex justify-between"><dt>Discounts</dt><dd>−{money(priced.discountTotal)}</dd></div>}
             <div className="flex justify-between"><dt>{props.pricesIncludeTax ? "Tax included" : "Tax"}</dt><dd>{money(priced.taxTotal)}</dd></div>

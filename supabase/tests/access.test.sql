@@ -75,7 +75,7 @@ select throws_ok($$insert into public.products (name) values ('Coffee')$$, '4250
 select throws_ok($$insert into public.orders (store_id, register_id, session_id, staff_id, receipt_number, subtotal, tax_total, total) values ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000d2', '00000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-0000000000c3', 2, 100, 0, 100)$$, '42501', null, 'cashier cannot create an order on another store''s register');
 select throws_ok($$insert into public.orders (store_id, register_id, session_id, staff_id, receipt_number, subtotal, tax_total, total) values ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000d3', '00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-0000000000c3', 2, 100, 0, 100)$$, '42501', null, 'cashier cannot create an order against another register''s session');
 with u as (update public.product_variants set price = 1 returning 1) select is(count(*), 0::bigint, 'cashier cannot change prices') from u;
-with u as (update public.orders set status = 'voided' returning 1) select is(count(*), 0::bigint, 'cashier cannot void orders') from u;
+select throws_ok($$update public.orders set status = 'voided'$$, '42501', null, 'cashier cannot edit orders directly');
 with u as (update public.stores set name = 'X' returning 1) select is(count(*), 0::bigint, 'cashier cannot edit stores') from u;
 select throws_ok(
   $$insert into public.register_sessions (register_id, opened_by) values ('00000000-0000-0000-0000-0000000000d2', '00000000-0000-0000-0000-0000000000c3')$$,
@@ -86,7 +86,7 @@ select lives_ok(
   'cashier can open a register in their store'
 );
 select lives_ok($$insert into public.customers (name) values ('Ben')$$, 'cashier can add customers');
-with d as (delete from public.customers returning 1) select is(count(*), 0::bigint, 'cashier cannot delete customers') from d;
+with d as (delete from public.customers where name = 'Ben' returning 1) select is(count(*), 1::bigint, 'cashier can delete a customer without sales') from d;
 
 reset role;
 set local role authenticated;
@@ -94,8 +94,8 @@ set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000a2","r
 
 select is((select count(*) from public.staff), 3::bigint, 'manager sees staff in their store');
 select lives_ok($$insert into public.products (name) values ('Coffee')$$, 'manager can add products');
-with u as (update public.orders set status = 'voided' where id = '00000000-0000-0000-0000-000000000021' returning 1) select is(count(*), 1::bigint, 'manager can void an order in their store') from u;
-with u as (update public.orders set status = 'voided' where id = '00000000-0000-0000-0000-000000000022' returning 1) select is(count(*), 0::bigint, 'manager cannot void another store''s order') from u;
+select throws_ok($$update public.orders set status = 'voided' where id = '00000000-0000-0000-0000-000000000021'$$, '42501', null, 'manager cannot edit orders directly');
+select throws_ok($$delete from public.payments where order_id = '00000000-0000-0000-0000-000000000021'$$, '42501', null, 'manager cannot delete payments');
 select throws_ok(
   $$insert into public.staff (user_id, name, email, role) values ('00000000-0000-0000-0000-0000000000a6', 'X', 'x@test', 'cashier')$$,
   '42501', null, 'manager cannot add staff'

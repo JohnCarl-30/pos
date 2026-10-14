@@ -255,6 +255,9 @@ export type Database = {
           subtotal: number;
           tax_total: number;
           total: number;
+          void_reason: string | null;
+          voided_at: string | null;
+          voided_by: string | null;
         };
         ComputedFields: never;
         Insert: {
@@ -273,6 +276,9 @@ export type Database = {
           subtotal: number;
           tax_total: number;
           total: number;
+          void_reason?: string | null;
+          voided_at?: string | null;
+          voided_by?: string | null;
         };
         Update: {
           created_at?: string;
@@ -290,6 +296,9 @@ export type Database = {
           subtotal?: number;
           tax_total?: number;
           total?: number;
+          void_reason?: string | null;
+          voided_at?: string | null;
+          voided_by?: string | null;
         };
         Relationships: [
           {
@@ -339,6 +348,13 @@ export type Database = {
             columns: ["store_id"];
             isOneToOne: false;
             referencedRelation: "stores";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "orders_voided_by_fkey";
+            columns: ["voided_by"];
+            isOneToOne: false;
+            referencedRelation: "staff";
             referencedColumns: ["id"];
           },
         ];
@@ -475,6 +491,262 @@ export type Database = {
             columns: ["tax_class_id"];
             isOneToOne: false;
             referencedRelation: "tax_classes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      refund_approvals: {
+        Row: {
+          approved_by: string;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          max_amount: number;
+          order_id: string;
+          requested_by: string;
+          store_id: string;
+          used_at: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          approved_by: string;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          max_amount: number;
+          order_id: string;
+          requested_by: string;
+          store_id: string;
+          used_at?: string | null;
+        };
+        Update: {
+          approved_by?: string;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          max_amount?: number;
+          order_id?: string;
+          requested_by?: string;
+          store_id?: string;
+          used_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "refund_approvals_approved_by_fkey";
+            columns: ["approved_by"];
+            isOneToOne: false;
+            referencedRelation: "staff";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "refund_approvals_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "refund_approvals_requested_by_fkey";
+            columns: ["requested_by"];
+            isOneToOne: false;
+            referencedRelation: "staff";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "refund_approvals_store_id_fkey";
+            columns: ["store_id"];
+            isOneToOne: false;
+            referencedRelation: "stores";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      refund_items: {
+        Row: {
+          amount: number;
+          created_at: string;
+          id: string;
+          order_item_id: string;
+          quantity: number;
+          refund_id: string;
+          restock: boolean;
+          tax: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount: number;
+          created_at?: string;
+          id?: string;
+          order_item_id: string;
+          quantity: number;
+          refund_id: string;
+          restock: boolean;
+          tax: number;
+        };
+        Update: {
+          amount?: number;
+          created_at?: string;
+          id?: string;
+          order_item_id?: string;
+          quantity?: number;
+          refund_id?: string;
+          restock?: boolean;
+          tax?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "refund_items_order_item_id_fkey";
+            columns: ["order_item_id"];
+            isOneToOne: false;
+            referencedRelation: "order_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "refund_items_refund_id_fkey";
+            columns: ["refund_id"];
+            isOneToOne: false;
+            referencedRelation: "refunds";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      refund_payments: {
+        Row: {
+          amount: number;
+          created_at: string;
+          id: string;
+          method: Database["public"]["Enums"]["payment_method"];
+          reference: string | null;
+          refund_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount: number;
+          created_at?: string;
+          id?: string;
+          method: Database["public"]["Enums"]["payment_method"];
+          reference?: string | null;
+          refund_id: string;
+        };
+        Update: {
+          amount?: number;
+          created_at?: string;
+          id?: string;
+          method?: Database["public"]["Enums"]["payment_method"];
+          reference?: string | null;
+          refund_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "refund_payments_refund_id_fkey";
+            columns: ["refund_id"];
+            isOneToOne: false;
+            referencedRelation: "refunds";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      refunds: {
+        Row: {
+          approval_id: string | null;
+          approved_by: string | null;
+          created_at: string;
+          id: string;
+          note: string | null;
+          order_id: string;
+          reason: string;
+          receipt_number: number;
+          register_id: string;
+          session_id: string;
+          staff_id: string;
+          store_id: string;
+          subtotal: number;
+          tax_total: number;
+          total: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          approval_id?: string | null;
+          approved_by?: string | null;
+          created_at?: string;
+          id?: string;
+          note?: string | null;
+          order_id: string;
+          reason: string;
+          receipt_number: number;
+          register_id: string;
+          session_id: string;
+          staff_id: string;
+          store_id: string;
+          subtotal: number;
+          tax_total: number;
+          total: number;
+        };
+        Update: {
+          approval_id?: string | null;
+          approved_by?: string | null;
+          created_at?: string;
+          id?: string;
+          note?: string | null;
+          order_id?: string;
+          reason?: string;
+          receipt_number?: number;
+          register_id?: string;
+          session_id?: string;
+          staff_id?: string;
+          store_id?: string;
+          subtotal?: number;
+          tax_total?: number;
+          total?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "refunds_approval_id_fkey";
+            columns: ["approval_id"];
+            isOneToOne: false;
+            referencedRelation: "refund_approvals";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "refunds_approved_by_fkey";
+            columns: ["approved_by"];
+            isOneToOne: false;
+            referencedRelation: "staff";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "refunds_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "refunds_register_id_fkey";
+            columns: ["register_id"];
+            isOneToOne: false;
+            referencedRelation: "registers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "refunds_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "register_sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "refunds_staff_id_fkey";
+            columns: ["staff_id"];
+            isOneToOne: false;
+            referencedRelation: "staff";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "refunds_store_id_fkey";
+            columns: ["store_id"];
+            isOneToOne: false;
+            referencedRelation: "stores";
             referencedColumns: ["id"];
           },
         ];
@@ -877,6 +1149,18 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_refund: {
+        Args: {
+          p_approval_id?: string;
+          p_lines: Json;
+          p_note?: string;
+          p_order_id: string;
+          p_payments: Json;
+          p_reason?: string;
+          p_session_id: string;
+        };
+        Returns: Json;
+      };
       import_catalog: {
         Args: { p_rows: Json; p_store_id: string };
         Returns: number;
@@ -918,6 +1202,10 @@ export type Database = {
           p_variant_id: string;
         };
         Returns: string;
+      };
+      void_order: {
+        Args: { p_order_id: string; p_reason: string };
+        Returns: undefined;
       };
     };
     Enums: {

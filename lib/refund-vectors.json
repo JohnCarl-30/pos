@@ -1,0 +1,10 @@
+[
+  { "name": "one of two splits evenly", "line": { "lineTotal": 650, "tax": 50, "quantity": 2, "refunded": 0, "units": 1 }, "expected": { "amount": 325, "tax": 25 } },
+  { "name": "second of two returns the rest", "line": { "lineTotal": 650, "tax": 50, "quantity": 2, "refunded": 1, "units": 1 }, "expected": { "amount": 325, "tax": 25 } },
+  { "name": "first of three rounds half-even", "line": { "lineTotal": 1001, "tax": 91, "quantity": 3, "refunded": 0, "units": 1 }, "expected": { "amount": 334, "tax": 30 } },
+  { "name": "second of three", "line": { "lineTotal": 1001, "tax": 91, "quantity": 3, "refunded": 1, "units": 1 }, "expected": { "amount": 333, "tax": 31 } },
+  { "name": "last of three returns exactly the remainder", "line": { "lineTotal": 1001, "tax": 91, "quantity": 3, "refunded": 2, "units": 1 }, "expected": { "amount": 334, "tax": 30 } },
+  { "name": "an exact half rounds to even", "line": { "lineTotal": 5, "tax": 3, "quantity": 2, "refunded": 0, "units": 1 }, "expected": { "amount": 2, "tax": 2 } },
+  { "name": "two of three at once", "line": { "lineTotal": 990, "tax": 90, "quantity": 3, "refunded": 1, "units": 2 }, "expected": { "amount": 660, "tax": 60 } },
+  { "name": "a single item refunds in full", "line": { "lineTotal": 1624, "tax": 124, "quantity": 1, "refunded": 0, "units": 1 }, "expected": { "amount": 1624, "tax": 124 } }
+]

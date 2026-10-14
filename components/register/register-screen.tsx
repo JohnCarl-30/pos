@@ -17,6 +17,8 @@ import CustomerDialog from "./customer-dialog";
 import CloseTillDialog from "./close-till-dialog";
 import ChangeRegisterButton from "./change-register-button";
 import SaleDone from "./sale-done";
+import ReturnDialog from "./return-dialog";
+import VoidDialog from "@/components/refunds/void-dialog";
 import { useOnline } from "@/hooks/use-online";
 import { CartError, discountShareBps, priceCart, type PaymentInput } from "@/lib/checkout";
 import { formatMoney } from "@/lib/money";
@@ -50,7 +52,7 @@ type RegisterScreenProps = {
 };
 
 type DiscountTarget = { kind: "line"; line: CartLine } | { kind: "order" } | null;
-type Done = { orderId: string; receiptNumber: number; change: number };
+type Done = { orderId: string; receiptNumber: number; change: number; total: number };
 
 export default function RegisterScreen(props: RegisterScreenProps) {
   const online = useOnline();
@@ -70,6 +72,7 @@ export default function RegisterScreen(props: RegisterScreenProps) {
   const [approvalOpen, setApprovalOpen] = useState(false);
   const [customerOpen, setCustomerOpen] = useState(false);
   const [done, setDone] = useState<Done | null>(null);
+  const [voidOpen, setVoidOpen] = useState(false);
   const [lastOrderId, setLastOrderId] = useState(props.lastOrderId);
 
   const categoryIndex = useMemo(() => new Map(props.categories.map((entry, index) => [entry.id, index])), [props.categories]);
@@ -148,7 +151,7 @@ export default function RegisterScreen(props: RegisterScreenProps) {
       return result.error;
     }
     setPayOpen(false);
-    setDone({ orderId: result.orderId, receiptNumber: result.receiptNumber, change: result.change });
+    setDone({ orderId: result.orderId, receiptNumber: result.receiptNumber, change: result.change, total: result.total });
     setLastOrderId(result.orderId);
     reset();
     return null;
@@ -165,13 +168,14 @@ export default function RegisterScreen(props: RegisterScreenProps) {
                 Reprint last receipt
               </a>
             )}
+            <ReturnDialog sessionId={props.sessionId} role={props.role} currency={props.currency} />
             <CloseTillDialog sessionId={props.sessionId} currency={props.currency} money={money} />
             <ChangeRegisterButton />
           </>
         }
       />
       {done ? (
-        <SaleDone orderId={done.orderId} receiptNumber={done.receiptNumber} change={done.change} money={money} onNewSale={() => setDone(null)} />
+        <SaleDone orderId={done.orderId} receiptNumber={done.receiptNumber} total={done.total} change={done.change} money={money} onNewSale={() => setDone(null)} onVoid={() => setVoidOpen(true)} />
       ) : (
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -281,6 +285,22 @@ export default function RegisterScreen(props: RegisterScreenProps) {
           setCustomerOpen(false);
         }}
       />
+      {done && (
+        <VoidDialog
+          open={voidOpen}
+          onOpenChange={setVoidOpen}
+          orderId={done.orderId}
+          receiptNumber={done.receiptNumber}
+          total={done.total}
+          money={money}
+          onVoided={() => {
+            setVoidOpen(false);
+            setNotice(`Receipt #${done.receiptNumber} voided.`);
+            setLastOrderId(null);
+            setDone(null);
+          }}
+        />
+      )}
     </section>
   );
 }

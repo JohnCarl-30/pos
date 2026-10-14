@@ -125,17 +125,19 @@ function PayForm({ total, currency, offline, money, onComplete }: Omit<PayDialog
   );
 }
 
-export default function PayDialog({ open, onOpenChange, ...props }: PayDialogProps) {
+export default function PayDialog({ open, onOpenChange, total, ...props }: PayDialogProps) {
   const [prevOpen, setPrevOpen] = useState(open);
   const [openCount, setOpenCount] = useState(0);
+  const [shownTotal, setShownTotal] = useState(total);
   if (open !== prevOpen) {
     setPrevOpen(open);
     if (open) setOpenCount((count) => count + 1);
   }
+  if (open && total !== shownTotal) setShownTotal(total);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <PayForm key={openCount} {...props} />
+        <PayForm key={openCount} total={shownTotal} {...props} />
       </DialogContent>
     </Dialog>
   );

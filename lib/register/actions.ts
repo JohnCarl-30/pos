@@ -2,21 +2,20 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { getCurrentStore, requireStaff } from "@/lib/auth/staff";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "@/lib/env";
 import { parseMoney } from "@/lib/money";
 import type { ActionResult } from "@/lib/action-result";
 import { REGISTER_COOKIE } from "./pick-register";
 import { registerDbError, registerErrorKind, type RegisterErrorKind } from "./errors";
 import { saleSchema, type SaleInput } from "./sale-schema";
+import { verifyApprover } from "./approver";
 
 export type CloseTillState = {
   error: string | null;
-  summary: { opening_cash: number; cash_sales: number; expected_cash: number; counted_cash: number; difference: number } | null;
+  summary: { opening_cash: number; cash_sales: number; cash_refunds: number; expected_cash: number; counted_cash: number; difference: number; voided_count: number } | null;
 };
 
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -125,23 +124,13 @@ export async function requestApproval(input: {
   const parsed = approvalSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Enter the manager's email and password." };
 
-  const verifier = createSupabaseClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
-  const { data: signedIn, error: signInError } = await verifier.auth.signInWithPassword({ email: parsed.data.email, password: parsed.data.password });
-  if (signInError || !signedIn.user) return { ok: false, error: "Email or password is incorrect." };
+  const approver = await verifyApprover(parsed.data.email, parsed.data.password, store.id);
+  if (!approver.ok) return approver;
 
   const admin = createAdminClient();
-  const { data: approver } = await admin.from("staff").select("id, role, active, staff_stores(store_id)").eq("user_id", signedIn.user.id).maybeSingle();
-  await verifier.auth.signOut({ scope: "local" });
-  if (!approver || !approver.active || (approver.role !== "manager" && approver.role !== "owner")) {
-    return { ok: false, error: "Only an active manager or owner can approve discounts." };
-  }
-  if (approver.role === "manager" && !approver.staff_stores.some((entry) => entry.store_id === store.id)) {
-    return { ok: false, error: "That manager doesn't work in this store." };
-  }
-
   const { data: approval, error } = await admin
     .from("discount_approvals")
-    .insert({ store_id: store.id, approved_by: approver.id, requested_by: staff.id, max_bps: parsed.data.shareBps, max_discount: parsed.data.discountTotal })
+    .insert({ store_id: store.id, approved_by: approver.approverId, requested_by: staff.id, max_bps: parsed.data.shareBps, max_discount: parsed.data.discountTotal })
     .select("id, max_bps, max_discount")
     .single();
   if (error || !approval) return { ok: false, error: "Couldn't record the approval. Try again." };

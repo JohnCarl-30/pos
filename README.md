@@ -41,6 +41,14 @@ To try the first-run setup instead, run `npx supabase db reset --no-seed` and op
 - **Receipts:** printed from the browser at 80mm width, so any receipt printer your device can print to works. Reprint the last receipt from the register.
 - **Totals are always calculated by the database** from current prices, so they can't be changed from the browser.
 
+## Orders, refunds & customers
+
+- **Orders:** every sale in the store, searchable by receipt number or customer and filterable by date, status, register and cashier. Each sale shows its lines, payments, discounts and refunds, and can reprint its receipt.
+- **Refunds:** give back some or all of a sale, item by item. Items can go back into stock or be marked damaged. Money goes back by the original method (card first, then cash), and cash refunds come out of the open till's expected cash. Cashiers need a manager or owner to approve each refund on the till. Start a refund from the sale's page or with **Return** on the register.
+- **Voids:** cancel a sale while its till is still open, for mistakes caught straight away. Cashiers can void their own sales. After the till closes, use a refund instead.
+- **Sales can't be edited:** nobody, not even the owner, can change or delete a recorded sale directly. Every correction is a refund or a void, with who did it and who approved it.
+- **Customers:** a list with total spent and last visit, and a page per customer with their sales and refunds. Customers with sales can't be deleted.
+
 ## Scripts
 
 | Script | What it does |

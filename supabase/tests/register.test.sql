@@ -144,7 +144,7 @@ select throws_ok(
 );
 select is(
   public.close_register((select id from public.register_sessions where register_id = '00000000-0000-0000-0000-0000000000d1' and closed_at is null), 5700, 'Shift end'),
-  '{"opening_cash":5000,"cash_sales":660,"expected_cash":5660,"counted_cash":5700,"difference":40}'::jsonb,
+  '{"opening_cash":5000,"cash_sales":660,"cash_refunds":0,"expected_cash":5660,"counted_cash":5700,"difference":40,"voided_count":0}'::jsonb,
   'closing reports expected and counted cash'
 );
 select throws_ok(

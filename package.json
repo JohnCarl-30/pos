@@ -18,7 +18,8 @@
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local > lib/supabase/database.types.ts",
     "env:local": "bash scripts/env-local.sh",
-    "db:vectors": "npx tsx scripts/checkout-vectors.mts"
+    "db:vectors": "npx tsx scripts/checkout-vectors.mts",
+    "test:race": "bash scripts/race-void-close.sh"
   },
   "dependencies": {
     "@rive-app/canvas": "^2.31.0",
