@@ -52,9 +52,14 @@ function PayForm({ total, currency, offline, money, onComplete }: Omit<PayDialog
 
   async function complete() {
     setPending(true);
-    const result = await onComplete(payments);
-    setPending(false);
-    if (result) setError(result);
+    try {
+      const result = await onComplete(payments);
+      if (result) setError(result);
+    } catch {
+      setError("Couldn't reach the server. Check the connection and try again.");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (

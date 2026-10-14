@@ -20,14 +20,24 @@ function CustomerForm({ onPick }: Pick<CustomerDialogProps, "onPick">) {
   function search(value: string) {
     setQuery(value);
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(async () => setResults(await searchCustomers(value)), 250);
+    timer.current = setTimeout(async () => {
+      try {
+        setResults(await searchCustomers(value));
+      } catch {
+        setError("Couldn't reach the server. Check the connection and try again.");
+      }
+    }, 250);
   }
 
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const result = await addCustomer(draft);
-    if (result.ok) onPick(result.customer);
-    else setError(result.error);
+    try {
+      const result = await addCustomer(draft);
+      if (result.ok) onPick(result.customer);
+      else setError(result.error);
+    } catch {
+      setError("Couldn't reach the server. Check the connection and try again.");
+    }
   }
 
   return (

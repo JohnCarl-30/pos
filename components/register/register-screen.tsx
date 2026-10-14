@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, type KeyboardEvent } from "react";
+import { useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useRouter } from "next/navigation";
 import { buttonVariants } from "@/components/_ui/button";
 import Button from "@/components/_ui/button";
 import { Input } from "@/components/_ui/input";
@@ -53,11 +54,13 @@ type Done = { orderId: string; receiptNumber: number; change: number };
 
 export default function RegisterScreen(props: RegisterScreenProps) {
   const online = useOnline();
+  const router = useRouter();
+  const searchRef = useRef<HTMLInputElement>(null);
   const money = (minor: number) => formatMoney(minor, props.currency, "en-US");
   const [lines, setLines] = useState<CartLine[]>([]);
   const [orderDiscount, setOrderDiscount] = useState<Discount>(null);
   const [customer, setCustomer] = useState<{ id: string; name: string } | null>(null);
-  const [approval, setApproval] = useState<{ id: string; maxBps: number } | null>(null);
+  const [approval, setApproval] = useState<{ id: string; maxBps: number; maxDiscount: number } | null>(null);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
@@ -81,13 +84,20 @@ export default function RegisterScreen(props: RegisterScreenProps) {
 
   const shareBps = pricing.priced ? discountShareBps(pricing.priced.subtotal, pricing.priced.discountTotal) : 0;
   const overLimit = props.role === "cashier" && shareBps > props.maxCashierDiscountBps;
-  const approved = overLimit && approval !== null && approval.maxBps >= shareBps;
+  const discountTotal = pricing.priced?.discountTotal ?? 0;
+  const approved = overLimit && approval !== null && approval.maxBps >= shareBps && approval.maxDiscount >= discountTotal;
   const needsApproval = overLimit && !approved;
   const canPay = lines.length > 0 && pricing.priced !== null && !needsApproval && online;
 
   function add(product: RegisterProduct, variant: RegisterVariant) {
     setLines((current) => addToCart(current, product, variant));
     setNotice(null);
+    searchRef.current?.focus();
+  }
+
+  function refocusSearch(event: Event) {
+    event.preventDefault();
+    searchRef.current?.focus();
   }
 
   function pick(product: RegisterProduct) {
@@ -128,7 +138,15 @@ export default function RegisterScreen(props: RegisterScreenProps) {
       customerId: customer?.id ?? null,
       payments,
     });
-    if (!result.ok) return result.error;
+    if (!result.ok) {
+      if (result.kind === "approval") {
+        setApproval(null);
+        setPayOpen(false);
+        setNotice(result.error);
+      }
+      if (result.kind === "closed") router.refresh();
+      return result.error;
+    }
     setPayOpen(false);
     setDone({ orderId: result.orderId, receiptNumber: result.receiptNumber, change: result.change });
     setLastOrderId(result.orderId);
@@ -159,6 +177,7 @@ export default function RegisterScreen(props: RegisterScreenProps) {
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             <div className="border-line-strong flex flex-col gap-2 border-b p-3">
               <Input
+                ref={searchRef}
                 aria-label="Search or scan a barcode"
                 placeholder="Search or scan a barcode"
                 className="min-h-11"
@@ -220,6 +239,7 @@ export default function RegisterScreen(props: RegisterScreenProps) {
           setVariantProduct(null);
         }}
         onClose={() => setVariantProduct(null)}
+        onCloseAutoFocus={refocusSearch}
       />
       <DiscountDialog
         open={discountTarget !== null}
@@ -246,6 +266,8 @@ export default function RegisterScreen(props: RegisterScreenProps) {
         open={approvalOpen}
         onOpenChange={setApprovalOpen}
         shareBps={shareBps}
+        discountTotal={discountTotal}
+        money={money}
         onApproved={(granted) => {
           setApproval(granted);
           setApprovalOpen(false);

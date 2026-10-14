@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(25);
+select plan(27);
 
 truncate table public.business, public.stores, public.staff, public.tax_classes,
   public.categories, public.products, public.customers restart identity cascade;
@@ -43,9 +43,11 @@ insert into public.stock_movements (store_id, variant_id, quantity_change, reaso
   ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000f3', 10, 'received', '00000000-0000-0000-0000-0000000000c1'),
   ('00000000-0000-0000-0000-0000000000b2', '00000000-0000-0000-0000-0000000000f3', 10, 'received', '00000000-0000-0000-0000-0000000000c1');
 update public.stock_levels set track = false where variant_id = '00000000-0000-0000-0000-0000000000f4';
-insert into public.discount_approvals (id, store_id, approved_by, requested_by, max_bps) values
-  ('00000000-0000-0000-0000-00000000aa01', '00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000c2', '00000000-0000-0000-0000-0000000000c3', 5000),
-  ('00000000-0000-0000-0000-00000000aa02', '00000000-0000-0000-0000-0000000000b2', '00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000000000c4', 5000);
+insert into public.discount_approvals (id, store_id, approved_by, requested_by, max_bps, max_discount) values
+  ('00000000-0000-0000-0000-00000000aa01', '00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000c2', '00000000-0000-0000-0000-0000000000c3', 5000, 100),
+  ('00000000-0000-0000-0000-00000000aa02', '00000000-0000-0000-0000-0000000000b2', '00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000000000c4', 5000, 100),
+  ('00000000-0000-0000-0000-00000000aa03', '00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000c2', '00000000-0000-0000-0000-0000000000c2', 5000, 100),
+  ('00000000-0000-0000-0000-00000000aa04', '00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000c2', '00000000-0000-0000-0000-0000000000c3', 5000, 50);
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000a3","role":"authenticated"}';
@@ -97,6 +99,20 @@ select throws_ok(
     '[{"variant_id":"00000000-0000-0000-0000-0000000000f3","quantity":1}]'::jsonb, '{"bps":3000}'::jsonb, null, null,
     '[{"method":"card","amount":231}]'::jsonb)$$,
   'P0001', 'discount needs approval', 'a cashier needs approval above their limit'
+);
+select throws_ok(
+  $$select public.create_order(
+    (select id from public.register_sessions where register_id = '00000000-0000-0000-0000-0000000000d1' and closed_at is null),
+    '[{"variant_id":"00000000-0000-0000-0000-0000000000f3","quantity":1}]'::jsonb, '{"bps":3000}'::jsonb, '00000000-0000-0000-0000-00000000aa03', null,
+    '[{"method":"card","amount":231}]'::jsonb)$$,
+  'P0001', 'discount needs approval', 'an approval asked for by someone else does not count'
+);
+select throws_ok(
+  $$select public.create_order(
+    (select id from public.register_sessions where register_id = '00000000-0000-0000-0000-0000000000d1' and closed_at is null),
+    '[{"variant_id":"00000000-0000-0000-0000-0000000000f3","quantity":1}]'::jsonb, '{"bps":3000}'::jsonb, '00000000-0000-0000-0000-00000000aa04', null,
+    '[{"method":"card","amount":231}]'::jsonb)$$,
+  'P0001', 'discount needs approval', 'an approval does not cover a bigger discount than was approved'
 );
 select lives_ok(
   $$select public.create_order(

@@ -16,3 +16,12 @@ export function registerDbError(error: { code?: string; message?: string } | nul
   if (error.code === "22023" && message) return `${message.charAt(0).toUpperCase()}${message.slice(1)}.`;
   return friendlyDbError(error);
 }
+
+export type RegisterErrorKind = "approval" | "closed";
+
+export function registerErrorKind(error: { code?: string; message?: string } | null): RegisterErrorKind | null {
+  const message = error?.message ?? "";
+  if (message.includes("discount needs approval")) return "approval";
+  if (message.includes("till is closed")) return "closed";
+  return null;
+}

@@ -69,6 +69,16 @@ test("a sale can be split between card and cash", async ({ page }) => {
   await expect(page.getByText(/Receipt #\d+/)).toBeVisible();
 });
 
+test("a scan right after tapping a tile adds the scanned item", async ({ page }) => {
+  await openRegister(page);
+  await page.getByRole("button", { name: "Add Croissant" }).click();
+  await page.keyboard.type("ESPRESSO-DEFAULT");
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("button", { name: "Remove Espresso" })).toBeVisible();
+  await expect(page.getByLabel("Quantity of Croissant")).toHaveText("1");
+  await page.getByRole("button", { name: "Clear" }).click();
+});
+
 test("closing the till compares counted and expected cash", async ({ page }) => {
   await openRegister(page);
   await page.getByRole("button", { name: "Close till" }).click();

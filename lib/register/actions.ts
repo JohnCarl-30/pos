@@ -11,7 +11,7 @@ import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "@/lib/env";
 import { parseMoney } from "@/lib/money";
 import type { ActionResult } from "@/lib/action-result";
 import { REGISTER_COOKIE } from "./pick-register";
-import { registerDbError } from "./errors";
+import { registerDbError, registerErrorKind, type RegisterErrorKind } from "./errors";
 import { saleSchema, type SaleInput } from "./sale-schema";
 
 export type CloseTillState = {
@@ -75,7 +75,7 @@ export async function closeTill(_: CloseTillState, formData: FormData): Promise<
 
 export async function completeSale(
   input: SaleInput,
-): Promise<{ ok: true; orderId: string; receiptNumber: number; total: number; change: number } | { ok: false; error: string }> {
+): Promise<{ ok: true; orderId: string; receiptNumber: number; total: number; change: number } | { ok: false; error: string; kind?: RegisterErrorKind | null }> {
   await requireStaff();
   const parsed = saleSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Something in the sale isn't valid. Check it and try again." };
@@ -100,7 +100,7 @@ export async function completeSale(
       reference: payment.reference ?? null,
     })),
   });
-  if (error || !data) return { ok: false, error: registerDbError(error) };
+  if (error || !data) return { ok: false, error: registerDbError(error), kind: registerErrorKind(error) };
   const result = data as { order_id: string; receipt_number: number; total: number; change: number };
   revalidatePath("/register");
   return { ok: true, orderId: result.order_id, receiptNumber: result.receipt_number, total: result.total, change: result.change };
@@ -110,9 +110,15 @@ const approvalSchema = z.object({
   email: z.email(),
   password: z.string().min(1).max(200),
   shareBps: z.number().int().min(1).max(10_000),
+  discountTotal: z.number().int().min(1).max(Number.MAX_SAFE_INTEGER),
 });
 
-export async function requestApproval(input: { email: string; password: string; shareBps: number }): Promise<{ ok: true; approvalId: string; maxBps: number } | { ok: false; error: string }> {
+export async function requestApproval(input: {
+  email: string;
+  password: string;
+  shareBps: number;
+  discountTotal: number;
+}): Promise<{ ok: true; approvalId: string; maxBps: number; maxDiscount: number } | { ok: false; error: string }> {
   const staff = await requireStaff();
   const store = await getCurrentStore(staff);
   if (!store) return { ok: false, error: "Pick a store in the sidebar first." };
@@ -135,11 +141,11 @@ export async function requestApproval(input: { email: string; password: string; 
 
   const { data: approval, error } = await admin
     .from("discount_approvals")
-    .insert({ store_id: store.id, approved_by: approver.id, requested_by: staff.id, max_bps: parsed.data.shareBps })
-    .select("id, max_bps")
+    .insert({ store_id: store.id, approved_by: approver.id, requested_by: staff.id, max_bps: parsed.data.shareBps, max_discount: parsed.data.discountTotal })
+    .select("id, max_bps, max_discount")
     .single();
   if (error || !approval) return { ok: false, error: "Couldn't record the approval. Try again." };
-  return { ok: true, approvalId: approval.id, maxBps: approval.max_bps };
+  return { ok: true, approvalId: approval.id, maxBps: approval.max_bps, maxDiscount: approval.max_discount };
 }
 
 function searchPattern(query: string): string {

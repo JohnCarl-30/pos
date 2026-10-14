@@ -11,6 +11,7 @@ create table public.discount_approvals (
   approved_by uuid not null references public.staff (id) on delete restrict,
   requested_by uuid not null references public.staff (id) on delete restrict,
   max_bps integer not null check (max_bps between 0 and 10000),
+  max_discount bigint not null check (max_discount >= 0),
   expires_at timestamptz not null default now() + interval '10 minutes',
   used_at timestamptz,
   created_at timestamptz not null default now()
@@ -22,8 +23,11 @@ create index discount_approvals_requested_by_idx on public.discount_approvals (r
 alter table public.discount_approvals enable row level security;
 revoke all on public.discount_approvals from anon;
 revoke insert, update, delete, truncate, references, trigger on public.discount_approvals from authenticated;
-create policy "staff read approvals for their stores" on public.discount_approvals
-  for select to authenticated using (private.can_access_store(store_id));
+create policy "staff read approvals they asked for" on public.discount_approvals
+  for select to authenticated using (
+    private.can_access_store(store_id)
+    and (requested_by = (select private.staff_id()) or (select private.staff_role()) in ('owner', 'manager'))
+  );
 
 alter table public.orders
   add column discount_approval_id uuid references public.discount_approvals (id) on delete restrict,
@@ -397,7 +401,9 @@ begin
         and a.store_id = v_store_id
         and a.used_at is null
         and a.expires_at > now()
+        and a.requested_by = v_staff_id
         and a.max_bps >= v_share
+        and a.max_discount >= v_discount_total
       for update;
       if not found then
         raise exception 'discount needs approval' using errcode = 'P0001';

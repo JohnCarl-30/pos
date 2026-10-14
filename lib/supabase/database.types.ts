@@ -116,6 +116,7 @@ export type Database = {
           expires_at: string;
           id: string;
           max_bps: number;
+          max_discount: number;
           requested_by: string;
           store_id: string;
           used_at: string | null;
@@ -127,6 +128,7 @@ export type Database = {
           expires_at?: string;
           id?: string;
           max_bps: number;
+          max_discount: number;
           requested_by: string;
           store_id: string;
           used_at?: string | null;
@@ -137,6 +139,7 @@ export type Database = {
           expires_at?: string;
           id?: string;
           max_bps?: number;
+          max_discount?: number;
           requested_by?: string;
           store_id?: string;
           used_at?: string | null;

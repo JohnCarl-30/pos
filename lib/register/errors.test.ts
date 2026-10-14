@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { registerDbError } from "./errors";
+import { registerDbError, registerErrorKind } from "./errors";
 
 describe("registerDbError", () => {
   it("explains checkout failures in plain words", () => {
@@ -10,5 +10,14 @@ describe("registerDbError", () => {
     expect(registerDbError({ code: "22023", message: "payments must add up to the total" })).toBe("Payments must add up to the total.");
     expect(registerDbError({ code: "42501", message: "not allowed" })).toBe("You don't have access to this.");
     expect(registerDbError(null)).toBe("Something went wrong. Try again.");
+  });
+});
+
+describe("registerErrorKind", () => {
+  it("tells an approval rejection and a closed till apart from other errors", () => {
+    expect(registerErrorKind({ code: "P0001", message: "discount needs approval" })).toBe("approval");
+    expect(registerErrorKind({ code: "P0001", message: "till is closed" })).toBe("closed");
+    expect(registerErrorKind({ code: "22023", message: "payments must add up to the total" })).toBeNull();
+    expect(registerErrorKind(null)).toBeNull();
   });
 });

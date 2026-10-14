@@ -11,11 +11,13 @@ import { formatBpsAsPercent } from "@/lib/percent";
 type ApprovalDialogProps = {
   open: boolean;
   shareBps: number;
+  discountTotal: number;
+  money: (minor: number) => string;
   onOpenChange: (open: boolean) => void;
-  onApproved: (approval: { id: string; maxBps: number }) => void;
+  onApproved: (approval: { id: string; maxBps: number; maxDiscount: number }) => void;
 };
 
-function ApprovalForm({ shareBps, onApproved }: Pick<ApprovalDialogProps, "shareBps" | "onApproved">) {
+function ApprovalForm({ shareBps, discountTotal, money, onApproved }: Omit<ApprovalDialogProps, "open" | "onOpenChange">) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -24,10 +26,15 @@ function ApprovalForm({ shareBps, onApproved }: Pick<ApprovalDialogProps, "share
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
-    const result = await requestApproval({ email: email.trim(), password, shareBps });
-    setPending(false);
-    if (result.ok) onApproved({ id: result.approvalId, maxBps: result.maxBps });
-    else setError(result.error);
+    try {
+      const result = await requestApproval({ email: email.trim(), password, shareBps, discountTotal });
+      if (result.ok) onApproved({ id: result.approvalId, maxBps: result.maxBps, maxDiscount: result.maxDiscount });
+      else setError(result.error);
+    } catch {
+      setError("Couldn't reach the server. Check the connection and try again.");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -35,7 +42,7 @@ function ApprovalForm({ shareBps, onApproved }: Pick<ApprovalDialogProps, "share
       <DialogHeader>
         <DialogTitle>Manager approval</DialogTitle>
         <DialogDescription>
-          This sale has {formatBpsAsPercent(shareBps)}% off, which is over the cashier limit. A manager or owner can approve it here. You stay signed in.
+          This sale has {money(discountTotal)} ({formatBpsAsPercent(shareBps)}%) off, which is over the cashier limit. A manager or owner can approve it here. You stay signed in.
         </DialogDescription>
       </DialogHeader>
       {error && <span role="alert" className="caption-style text-danger">{error}</span>}

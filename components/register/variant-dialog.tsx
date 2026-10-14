@@ -9,12 +9,13 @@ type VariantDialogProps = {
   money: (minor: number) => string;
   onPick: (product: RegisterProduct, variant: RegisterVariant) => void;
   onClose: () => void;
+  onCloseAutoFocus?: (event: Event) => void;
 };
 
-export default function VariantDialog({ product, money, onPick, onClose }: VariantDialogProps) {
+export default function VariantDialog({ product, money, onPick, onClose, onCloseAutoFocus }: VariantDialogProps) {
   return (
     <Dialog open={product !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
+      <DialogContent onCloseAutoFocus={onCloseAutoFocus}>
         {product && (
           <div className="flex flex-col gap-4 p-6">
             <DialogHeader>
