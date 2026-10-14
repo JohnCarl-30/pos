@@ -698,6 +698,15 @@ export type Database = {
         Returns: string;
       };
       set_default_tax_class: { Args: { p_id: string }; Returns: undefined };
+      set_staff_access: {
+        Args: {
+          p_active: boolean;
+          p_role: Database["public"]["Enums"]["staff_role"];
+          p_staff_id: string;
+          p_store_ids: string[];
+        };
+        Returns: undefined;
+      };
       setup_status: { Args: Record<PropertyKey, never>; Returns: boolean };
     };
     Enums: {
