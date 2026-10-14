@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { cloneElement, isValidElement, type ReactNode } from "react";
 import { Label } from "@/components/_ui/label";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +23,14 @@ export default function Field({
   className,
   children,
 }: FieldProps) {
+  const describedBy = error ? `${htmlFor}-error` : hint ? `${htmlFor}-hint` : undefined;
+  const control = isValidElement<Record<string, unknown>>(children)
+    ? cloneElement(children, {
+        "aria-describedby": describedBy,
+        ...(error ? { "aria-invalid": true } : {}),
+      })
+    : children;
+
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <div className="flex items-center justify-between gap-2">
@@ -37,7 +45,7 @@ export default function Field({
         </Label>
         {trailing}
       </div>
-      {children}
+      {control}
       {error ? (
         <span
           id={`${htmlFor}-error`}

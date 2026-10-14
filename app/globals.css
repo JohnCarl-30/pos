@@ -109,7 +109,7 @@
   --sidebar-border: #232323;
   --sidebar-ring: #676767;
   --line-strong: #393939;
-  --subtle: #676767;
+  --subtle: #919191;
   --faint: #454545;
   --soft: #a4a4a4;
   --chip: #cfcfcf;
@@ -267,6 +267,13 @@ select:autofill {
 }
 
 @layer components {
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-in,
+  .animate-out {
+    animation: none !important;
+  }
 }
 
 html[data-sidebar-resizing],

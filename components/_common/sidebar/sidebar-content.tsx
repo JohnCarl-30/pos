@@ -31,8 +31,8 @@ export default function SidebarContent({ businessName, staffName, role, stores, 
       <div className="border-sidebar-border bg-sidebar-accent flex shrink-0 items-center gap-2 border-b p-3">
         <Logo aria-hidden className="size-8 shrink-0 overflow-visible" />
         <div className="flex min-w-0 flex-col gap-1">
-          <span className="lead-style block truncate font-medium tracking-[-0.01em]">{businessName}</span>
-          <span className="caption-style text-subtle block truncate">{currentStore?.name ?? "No store"}</span>
+          <span title={businessName} className="lead-style block truncate font-medium tracking-[-0.01em]">{businessName}</span>
+          <span title={currentStore?.name} className="caption-style text-subtle block truncate">{currentStore?.name ?? "No store"}</span>
         </div>
       </div>
 
@@ -56,7 +56,7 @@ export default function SidebarContent({ businessName, staffName, role, stores, 
 
       <div className="border-sidebar-border bg-sidebar-accent flex shrink-0 items-center justify-between gap-2 border-t p-4">
         <div className="flex min-w-0 flex-col gap-2">
-          <span className="lead-style block truncate font-medium tracking-[-0.01em]">{staffName}</span>
+          <span title={staffName} className="lead-style block truncate font-medium tracking-[-0.01em]">{staffName}</span>
           <span className="caption-style text-subtle block capitalize">{role}</span>
         </div>
         <form action={signOut}>

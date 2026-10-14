@@ -29,7 +29,7 @@ function ScrollArea({
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
         className={cn(
-          "size-full rounded-[inherit] outline-none [&>div]:block!",
+          "size-full overscroll-contain rounded-[inherit] outline-none [&>div]:block!",
           viewportClassName,
         )}
       >
