@@ -109,11 +109,70 @@ export type Database = {
         };
         Relationships: [];
       };
+      discount_approvals: {
+        Row: {
+          approved_by: string;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          max_bps: number;
+          requested_by: string;
+          store_id: string;
+          used_at: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          approved_by: string;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          max_bps: number;
+          requested_by: string;
+          store_id: string;
+          used_at?: string | null;
+        };
+        Update: {
+          approved_by?: string;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          max_bps?: number;
+          requested_by?: string;
+          store_id?: string;
+          used_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "discount_approvals_approved_by_fkey";
+            columns: ["approved_by"];
+            isOneToOne: false;
+            referencedRelation: "staff";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "discount_approvals_requested_by_fkey";
+            columns: ["requested_by"];
+            isOneToOne: false;
+            referencedRelation: "staff";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "discount_approvals_store_id_fkey";
+            columns: ["store_id"];
+            isOneToOne: false;
+            referencedRelation: "stores";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       order_items: {
         Row: {
           created_at: string;
           discount: number;
           id: string;
+          line_discount_amount: number | null;
+          line_discount_bps: number | null;
+          line_number: number | null;
           line_total: number;
           name: string;
           order_id: string;
@@ -129,6 +188,9 @@ export type Database = {
           created_at?: string;
           discount?: number;
           id?: string;
+          line_discount_amount?: number | null;
+          line_discount_bps?: number | null;
+          line_number?: number | null;
           line_total: number;
           name: string;
           order_id: string;
@@ -143,6 +205,9 @@ export type Database = {
           created_at?: string;
           discount?: number;
           id?: string;
+          line_discount_amount?: number | null;
+          line_discount_bps?: number | null;
+          line_number?: number | null;
           line_total?: number;
           name?: string;
           order_id?: string;
@@ -174,6 +239,8 @@ export type Database = {
         Row: {
           created_at: string;
           customer_id: string | null;
+          discount_approval_id: string | null;
+          discount_by: string | null;
           discount_total: number;
           id: string;
           receipt_number: number;
@@ -190,6 +257,8 @@ export type Database = {
         Insert: {
           created_at?: string;
           customer_id?: string | null;
+          discount_approval_id?: string | null;
+          discount_by?: string | null;
           discount_total?: number;
           id?: string;
           receipt_number: number;
@@ -205,6 +274,8 @@ export type Database = {
         Update: {
           created_at?: string;
           customer_id?: string | null;
+          discount_approval_id?: string | null;
+          discount_by?: string | null;
           discount_total?: number;
           id?: string;
           receipt_number?: number;
@@ -223,6 +294,20 @@ export type Database = {
             columns: ["customer_id"];
             isOneToOne: false;
             referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "orders_discount_approval_id_fkey";
+            columns: ["discount_approval_id"];
+            isOneToOne: false;
+            referencedRelation: "discount_approvals";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "orders_discount_by_fkey";
+            columns: ["discount_by"];
+            isOneToOne: false;
+            referencedRelation: "staff";
             referencedColumns: ["id"];
           },
           {
@@ -393,6 +478,7 @@ export type Database = {
       };
       register_sessions: {
         Row: {
+          close_note: string | null;
           closed_at: string | null;
           closed_by: string | null;
           counted_cash: number | null;
@@ -405,6 +491,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          close_note?: string | null;
           closed_at?: string | null;
           closed_by?: string | null;
           counted_cash?: number | null;
@@ -416,6 +503,7 @@ export type Database = {
           register_id: string;
         };
         Update: {
+          close_note?: string | null;
           closed_at?: string | null;
           closed_by?: string | null;
           counted_cash?: number | null;
@@ -656,8 +744,10 @@ export type Database = {
           created_at: string;
           currency: string;
           id: string;
+          max_cashier_discount_bps: number;
           name: string;
           prices_include_tax: boolean;
+          receipt_footer: string | null;
           timezone: string;
         };
         ComputedFields: never;
@@ -666,8 +756,10 @@ export type Database = {
           created_at?: string;
           currency: string;
           id?: string;
+          max_cashier_discount_bps?: number;
           name: string;
           prices_include_tax?: boolean;
+          receipt_footer?: string | null;
           timezone?: string;
         };
         Update: {
@@ -675,8 +767,10 @@ export type Database = {
           created_at?: string;
           currency?: string;
           id?: string;
+          max_cashier_discount_bps?: number;
           name?: string;
           prices_include_tax?: boolean;
+          receipt_footer?: string | null;
           timezone?: string;
         };
         Relationships: [];
@@ -751,6 +845,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      close_register: {
+        Args: { p_counted_cash: number; p_note?: string; p_session_id: string };
+        Returns: Json;
+      };
       complete_setup: {
         Args: {
           p_business_name: string;
@@ -765,9 +863,24 @@ export type Database = {
         };
         Returns: string;
       };
+      create_order: {
+        Args: {
+          p_approval_id?: string;
+          p_customer_id?: string;
+          p_lines: Json;
+          p_order_discount?: Json;
+          p_payments?: Json;
+          p_session_id: string;
+        };
+        Returns: Json;
+      };
       import_catalog: {
         Args: { p_rows: Json; p_store_id: string };
         Returns: number;
+      };
+      open_register: {
+        Args: { p_opening_cash: number; p_register_id: string };
+        Returns: string;
       };
       record_stock_count: {
         Args: {
