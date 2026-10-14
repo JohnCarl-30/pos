@@ -175,7 +175,7 @@ export default function RegisterScreen(props: RegisterScreenProps) {
         }
       />
       {done ? (
-        <SaleDone orderId={done.orderId} receiptNumber={done.receiptNumber} change={done.change} money={money} onNewSale={() => setDone(null)} onVoid={() => setVoidOpen(true)} />
+        <SaleDone orderId={done.orderId} receiptNumber={done.receiptNumber} total={done.total} change={done.change} money={money} onNewSale={() => setDone(null)} onVoid={() => setVoidOpen(true)} />
       ) : (
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">

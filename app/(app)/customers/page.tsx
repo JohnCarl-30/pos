@@ -33,7 +33,11 @@ export default async function CustomersPage({ searchParams }: CustomersPageProps
       <CustomersToolbar q={filters.q} />
       <ScrollArea className="min-h-0 flex-1">
         {result.total === 0 ? (
-          <EmptyState title="No customers match" description="Try another name, email or phone, or add a new customer." />
+          filters.q ? (
+            <EmptyState title="No customers match" description="Try another name, email or phone, or add a new customer." action={<Button href="/customers" variant="secondary" size="md">Clear search</Button>} />
+          ) : (
+            <EmptyState title="No customers yet" description="Add customers here or from the register, then see what they've bought." action={<Button href="/customers/new" variant="primary" size="md">New customer</Button>} />
+          )
         ) : (
           <CustomersTable rows={result.rows} currency={store?.currency ?? "USD"} timeZone={storeRow?.timezone ?? "UTC"} />
         )}

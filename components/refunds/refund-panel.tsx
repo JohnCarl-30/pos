@@ -7,6 +7,7 @@ import { Input } from "@/components/_ui/input";
 import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/_ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/_ui/select";
 import RefundApprovalDialog from "./refund-approval-dialog";
+import Card from "@/components/_common/card";
 import { checkPayout, priceRefund, suggestPayout, type RefundMethod, type RefundPayment } from "@/lib/refunds";
 import { currencyDigits, formatMoney, parseMoney } from "@/lib/money";
 import { refundSale } from "@/lib/orders/actions";
@@ -122,42 +123,51 @@ export default function RefundPanel({ context, sessionId, role, currency, onDone
         </DialogDescription>
       </DialogHeader>
       {error && <span role="alert" className="caption-style text-danger">{error}</span>}
-      <ul className="flex flex-col gap-3">
-        {open.map((line) => {
-          const left = line.quantity - line.refunded;
-          const count = units[line.orderItemId] ?? 0;
-          const stocked = restock[line.orderItemId] ?? true;
-          return (
-            <li key={line.orderItemId} className="border-line-strong flex flex-col gap-2 border-b pb-3">
-              <div className="flex items-baseline justify-between gap-2">
-                <span>{line.name}</span>
-                <span className="caption-style text-subtle">
-                  {money(line.unitPaid)} each · {left} of {line.quantity} left
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button variant="secondary" size="icon" className="size-11" aria-label={`Fewer ${line.name}`} disabled={count === 0} onClick={() => step(line.orderItemId, left, -1)}>
-                  −
-                </Button>
-                <output aria-label={`Refund quantity of ${line.name}`} className="min-w-8 text-center tabular-nums">
-                  {count}
-                </output>
-                <Button variant="secondary" size="icon" className="size-11" aria-label={`More ${line.name}`} disabled={count >= left} onClick={() => step(line.orderItemId, left, 1)}>
-                  +
-                </Button>
-                <div role="group" aria-label={`Stock for ${line.name}`} className="ml-auto flex gap-1">
-                  <Button variant="ghost" size="md" aria-pressed={stocked} className="aria-pressed:bg-muted aria-pressed:text-foreground min-h-11" onClick={() => setRestock((current) => ({ ...current, [line.orderItemId]: true }))}>
-                    Back to stock
-                  </Button>
-                  <Button variant="ghost" size="md" aria-pressed={!stocked} className="aria-pressed:bg-warning/15 aria-pressed:text-warning min-h-11" onClick={() => setRestock((current) => ({ ...current, [line.orderItemId]: false }))}>
-                    Damaged
-                  </Button>
-                </div>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+      <section aria-labelledby="refund-items" className="flex flex-col gap-2">
+        <h3 id="refund-items" className="eyebrow-style text-soft font-normal">Items</h3>
+        <Card className="flex flex-col p-0">
+          <ul className="flex flex-col">
+            {open.map((line) => {
+              const left = line.quantity - line.refunded;
+              const count = units[line.orderItemId] ?? 0;
+              const stocked = restock[line.orderItemId] ?? true;
+              return (
+                <li key={line.orderItemId} className="flex flex-col gap-3 p-4 shadow-[inset_0_-1px_0_var(--line-strong)] last:shadow-none">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 flex-col gap-1.5">
+                      <span className="truncate">{line.name}</span>
+                      <span className="caption-style text-soft tabular-nums">
+                        {money(line.unitPaid)} each · {left} of {line.quantity} left
+                      </span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Button variant="secondary" size="icon" className="size-11" aria-label={`Fewer ${line.name}`} disabled={count === 0} onClick={() => step(line.orderItemId, left, -1)}>
+                        −
+                      </Button>
+                      <output aria-label={`Refund quantity of ${line.name}`} className="lead-style min-w-9 text-center tabular-nums">
+                        {count}
+                      </output>
+                      <Button variant="secondary" size="icon" className="size-11" aria-label={`More ${line.name}`} disabled={count >= left} onClick={() => step(line.orderItemId, left, 1)}>
+                        +
+                      </Button>
+                    </div>
+                  </div>
+                  {count > 0 && (
+                    <div role="group" aria-label={`Stock for ${line.name}`} className="flex gap-1 self-start rounded-full bg-white/4 p-1">
+                      <Button variant="ghost" size="md" aria-pressed={stocked} className="aria-pressed:bg-muted aria-pressed:text-foreground min-h-11" onClick={() => setRestock((current) => ({ ...current, [line.orderItemId]: true }))}>
+                        Back to stock
+                      </Button>
+                      <Button variant="ghost" size="md" aria-pressed={!stocked} className="aria-pressed:bg-warning/15 aria-pressed:text-warning min-h-11" onClick={() => setRestock((current) => ({ ...current, [line.orderItemId]: false }))}>
+                        Damaged
+                      </Button>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      </section>
       <Field label="Reason" htmlFor="refund-reason">
         <Select value={reason} onValueChange={(value) => setReason(value as RefundReason)}>
           <SelectTrigger id="refund-reason" className="min-h-11">
@@ -177,13 +187,9 @@ export default function RefundPanel({ context, sessionId, role, currency, onDone
           <Input id="refund-note" className="min-h-11" maxLength={300} value={note} onChange={(event) => setNote(event.target.value)} required />
         </Field>
       )}
-      <div className="flex justify-between font-medium tabular-nums">
-        <span>Refund total</span>
-        <span>{money(totals.total)}</span>
-      </div>
       {chosen.length > 0 && (
         <fieldset className="flex flex-col gap-2">
-          <legend className="caption-style text-subtle mb-1">Money back</legend>
+          <legend className="eyebrow-style text-soft mb-2 font-normal">Money back</legend>
           {shown.map((row, index) => (
             <div key={index} className="flex flex-wrap items-center gap-2">
               <Select value={row.method} onValueChange={(value) => editRow(index, { method: value as RefundMethod, reference: value === "cash" ? "" : row.reference })}>
@@ -220,7 +226,11 @@ export default function RefundPanel({ context, sessionId, role, currency, onDone
           {payoutError && <span role="status" className="caption-style text-warning">{payoutError}</span>}
         </fieldset>
       )}
-      <DialogFooter>
+      <DialogFooter className="items-center sm:justify-between">
+        <div className="flex flex-col gap-1.5">
+          <span className="caption-style text-soft">Refund total</span>
+          <span className="text-[28px] leading-none font-semibold tabular-nums">{money(totals.total)}</span>
+        </div>
         {needsApproval ? (
           <Button variant="primary" size="md" className="min-h-11" disabled={!ready} onClick={() => setApprovalOpen(true)}>
             Get approval

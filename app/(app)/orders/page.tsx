@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import PageHeader from "@/components/_common/page-header";
 import EmptyState from "@/components/_common/empty-state";
+import Button from "@/components/_ui/button";
 import { ScrollArea } from "@/components/_ui/scroll-area";
 import OrdersToolbar from "@/components/orders/orders-toolbar";
 import OrdersTable from "@/components/orders/orders-table";
@@ -37,6 +38,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
   const timeZone = storeRow?.timezone ?? "UTC";
   const { rows, total } = await loadOrders(supabase, store.id, filters, timeZone);
   const pages = Math.max(1, Math.ceil(total / ORDER_PAGE_SIZE));
+  const filtered = Boolean(filters.q || filters.status || filters.register || filters.cashier || filters.from || filters.to);
 
   const hrefFor = (page: number) => {
     const next = new URLSearchParams();
@@ -51,7 +53,11 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
       <OrdersToolbar filters={filters} registers={registers ?? []} cashiers={cashiers ?? []} />
       <ScrollArea className="min-h-0 flex-1">
         {total === 0 ? (
-          <EmptyState title="No sales match" description="Try another receipt number, date or filter." />
+          filtered ? (
+            <EmptyState title="No sales match" description="Try another receipt number, date or filter." action={<Button href="/orders" variant="secondary" size="md">Clear filters</Button>} />
+          ) : (
+            <EmptyState title="No sales yet" description="Sales from the register show up here, with their receipts, refunds and voids." action={<Button href="/register" variant="primary" size="md">Open the register</Button>} />
+          )
         ) : (
           <OrdersTable rows={rows} currency={store.currency} timeZone={timeZone} />
         )}

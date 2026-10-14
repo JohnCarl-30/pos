@@ -7,6 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import CustomerForm from "@/components/customers/customer-form";
 import DeleteCustomerButton from "@/components/customers/delete-customer-button";
 import StatusTag from "@/components/orders/status-tag";
+import DetailSection from "@/components/_common/detail-section";
+import Stat from "@/components/_common/stat";
 import { requireRole } from "@/lib/auth/staff";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
@@ -30,25 +32,42 @@ export default async function CustomerPage({ params }: CustomerPageProps) {
   const refunds = customer.orders
     .flatMap((order) => order.refunds.map((refund) => ({ ...refund, orderId: order.id, orderReceipt: order.receipt_number, store: order.store })))
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
+  const counted = customer.orders.filter((order) => order.status !== "voided");
+  const spent = counted.reduce((sum, order) => sum + order.total - order.refunds.reduce((total, refund) => total + refund.total, 0), 0);
+  const visits = counted.length;
+  const lastVisit = counted[0] ?? null;
+  const currency = lastVisit?.store?.currency ?? customer.orders[0]?.store?.currency ?? "USD";
 
   return (
     <section id="customer" className="flex min-h-0 min-w-0 flex-1 flex-col">
       <PageHeader title={customer.name} actions={<DeleteCustomerButton id={customer.id} name={customer.name} />} />
       <ScrollArea className="min-h-0 flex-1">
-        <div className="flex max-w-[56em] flex-col gap-8 p-4">
-          <CustomerForm key={customer.id} customer={customer} />
-          <section aria-labelledby="sales-heading" className="flex flex-col gap-2">
-            <h2 id="sales-heading">Sales</h2>
+        <div className="flex max-w-[64em] flex-col">
+          <div className="flex flex-wrap items-end justify-between gap-6 p-5 shadow-[inset_0_-1px_0_var(--line-strong)]">
+            <span className="text-soft">{[customer.email, customer.phone].filter(Boolean).join(" · ") || "No contact details yet"}</span>
+            <div className="flex flex-wrap gap-8">
+              <Stat label="Total spent" value={formatMoney(spent, currency, "en-US")} />
+              <Stat label={visits === 1 ? "Visit" : "Visits"} value={visits} />
+              <Stat label="Last visit" value={lastVisit ? new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: lastVisit.store?.timezone ?? "UTC" }).format(new Date(lastVisit.created_at)) : "—"} />
+              {refunds.length > 0 && <Stat label={refunds.length === 1 ? "Refund" : "Refunds"} value={refunds.length} />}
+            </div>
+          </div>
+
+          <DetailSection title="Details">
+            <CustomerForm key={customer.id} customer={customer} />
+          </DetailSection>
+
+          <DetailSection title="Sales">
             {customer.orders.length === 0 ? (
-              <p className="text-subtle">No sales yet.</p>
+              <p className="text-subtle">No sales yet. Attach this customer from the register with + Customer.</p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Receipt</TableHead>
                     <TableHead>Date</TableHead>
-                    <TableHead>Store</TableHead>
-                    <TableHead>Total</TableHead>
+                    <TableHead className="hidden md:table-cell">Store</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -57,29 +76,30 @@ export default async function CustomerPage({ params }: CustomerPageProps) {
                     <TableRow key={order.id}>
                       <TableCell><Link href={`/orders/${order.id}`} className="hover:underline">#{order.receipt_number}</Link></TableCell>
                       <TableCell>{date(order.created_at, order.store?.timezone ?? "UTC")}</TableCell>
-                      <TableCell>{order.store?.name ?? "—"}</TableCell>
-                      <TableCell>{formatMoney(order.total, order.store?.currency ?? "USD", "en-US")}</TableCell>
+                      <TableCell className="hidden md:table-cell">{order.store?.name ?? "—"}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatMoney(order.total, order.store?.currency ?? "USD", "en-US")}</TableCell>
                       <TableCell><StatusTag status={order.status} /></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             )}
-          </section>
+          </DetailSection>
+
           {refunds.length > 0 && (
-            <section aria-labelledby="customer-refunds-heading" className="flex flex-col gap-2">
-              <h2 id="customer-refunds-heading">Refunds</h2>
-              <ul className="flex flex-col gap-1">
+            <DetailSection title="Refunds">
+              <ul className="flex flex-col gap-2">
                 {refunds.map((refund) => (
                   <li key={refund.id} className="flex flex-wrap justify-between gap-2">
                     <span>
-                      Refund #{refund.receipt_number} for <Link href={`/orders/${refund.orderId}`} className="hover:underline">receipt #{refund.orderReceipt}</Link> · {date(refund.created_at, refund.store?.timezone ?? "UTC")}
+                      Refund #{refund.receipt_number} for <Link href={`/orders/${refund.orderId}`} className="hover:underline">receipt #{refund.orderReceipt}</Link>
+                      <span className="text-soft"> · {date(refund.created_at, refund.store?.timezone ?? "UTC")}</span>
                     </span>
-                    <span>{formatMoney(refund.total, refund.store?.currency ?? "USD", "en-US")}</span>
+                    <span className="tabular-nums">−{formatMoney(refund.total, refund.store?.currency ?? "USD", "en-US")}</span>
                   </li>
                 ))}
               </ul>
-            </section>
+            </DetailSection>
           )}
         </div>
       </ScrollArea>
