@@ -49,6 +49,18 @@ To try the first-run setup instead, run `npx supabase db reset --no-seed` and op
 - **Sales can't be edited:** nobody, not even the owner, can change or delete a recorded sale directly. Every correction is a refund or a void, with who did it and who approved it.
 - **Customers:** a list with total spent and last visit, and a page per customer with their sales and refunds. Customers with sales can't be deleted.
 
+## Reports
+
+Managers and owners get reports for the store picked in the sidebar, for today, yesterday, the last 7 or 30 days, this or last month, or any range up to a year. Days and hours follow the store's time zone.
+
+- **Summary:** net sales, number of sales, average sale, refunds, discounts and tax. It also shows a sales chart by hour or day, a cash/card/other split, and voided sales.
+- **Products:** best sellers by net revenue or units, with refunds taken off, and each category's share.
+- **Staff:** sales, refunds, voids and discounts per person. Voids above 3%, refunds above 5% of sales, and any voided cash sale are flagged.
+- **Cash-ups:** every closed till, with its float, cash sales, cash refunds, expected and counted cash, and whether it was short or over.
+- **CSV export** of whichever report you're looking at.
+
+Refunds count on the day they happen, and voided sales never count, so a day's report matches its tills and doesn't change later.
+
 ## Scripts
 
 | Script | What it does |
