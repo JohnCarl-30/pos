@@ -10,7 +10,7 @@ export default async function StoresSettingsPage() {
   const supabase = await createClient();
   const { data: stores } = await supabase
     .from("stores")
-    .select("id, name, address, currency, timezone, prices_include_tax, registers(id, name)")
+    .select("id, name, address, currency, timezone, prices_include_tax, max_cashier_discount_bps, receipt_footer, registers(id, name)")
     .order("name");
   return <StoresTable stores={stores ?? []} />;
 }

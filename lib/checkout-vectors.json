@@ -1,0 +1,76 @@
+[
+  {
+    "name": "tax added on top",
+    "pricesIncludeTax": false,
+    "lines": [{ "price": 300, "quantity": 2, "rateBps": 1000 }],
+    "orderDiscount": null,
+    "expected": { "subtotal": 600, "discountTotal": 0, "taxTotal": 60, "total": 660, "lines": [{ "discount": 0, "tax": 60, "lineTotal": 660 }] }
+  },
+  {
+    "name": "line percentage discount before tax, half-even tax",
+    "pricesIncludeTax": false,
+    "lines": [{ "price": 1250, "quantity": 1, "rateBps": 1000, "discountBps": 1000 }],
+    "orderDiscount": null,
+    "expected": { "subtotal": 1250, "discountTotal": 125, "taxTotal": 112, "total": 1237, "lines": [{ "discount": 125, "tax": 112, "lineTotal": 1237 }] }
+  },
+  {
+    "name": "prices include tax",
+    "pricesIncludeTax": true,
+    "lines": [{ "price": 300, "quantity": 1, "rateBps": 1000 }],
+    "orderDiscount": null,
+    "expected": { "subtotal": 300, "discountTotal": 0, "taxTotal": 27, "total": 300, "lines": [{ "discount": 0, "tax": 27, "lineTotal": 300 }] }
+  },
+  {
+    "name": "whole-sale amount split by largest remainder",
+    "pricesIncludeTax": false,
+    "lines": [
+      { "price": 300, "quantity": 1, "rateBps": 1000 },
+      { "price": 1250, "quantity": 1, "rateBps": 1000 }
+    ],
+    "orderDiscount": { "amount": 100 },
+    "expected": {
+      "subtotal": 1550, "discountTotal": 100, "taxTotal": 145, "total": 1595,
+      "lines": [{ "discount": 19, "tax": 28, "lineTotal": 309 }, { "discount": 81, "tax": 117, "lineTotal": 1286 }]
+    }
+  },
+  {
+    "name": "line amount then whole-sale percentage",
+    "pricesIncludeTax": false,
+    "lines": [
+      { "price": 300, "quantity": 1, "rateBps": 0, "discountAmount": 50 },
+      { "price": 200, "quantity": 1, "rateBps": 0 }
+    ],
+    "orderDiscount": { "bps": 1000 },
+    "expected": {
+      "subtotal": 500, "discountTotal": 95, "taxTotal": 0, "total": 405,
+      "lines": [{ "discount": 75, "tax": 0, "lineTotal": 225 }, { "discount": 20, "tax": 0, "lineTotal": 180 }]
+    }
+  },
+  {
+    "name": "tied remainders go to the earlier line",
+    "pricesIncludeTax": false,
+    "lines": [
+      { "price": 100, "quantity": 1, "rateBps": 0 },
+      { "price": 100, "quantity": 1, "rateBps": 0 }
+    ],
+    "orderDiscount": { "amount": 1 },
+    "expected": {
+      "subtotal": 200, "discountTotal": 1, "taxTotal": 0, "total": 199,
+      "lines": [{ "discount": 1, "tax": 0, "lineTotal": 99 }, { "discount": 0, "tax": 0, "lineTotal": 100 }]
+    }
+  },
+  {
+    "name": "a full discount makes the sale free",
+    "pricesIncludeTax": false,
+    "lines": [{ "price": 300, "quantity": 1, "rateBps": 1000 }],
+    "orderDiscount": { "bps": 10000 },
+    "expected": { "subtotal": 300, "discountTotal": 300, "taxTotal": 0, "total": 0, "lines": [{ "discount": 300, "tax": 0, "lineTotal": 0 }] }
+  },
+  {
+    "name": "percentage discount rounds half-even",
+    "pricesIncludeTax": false,
+    "lines": [{ "price": 333, "quantity": 3, "rateBps": 825, "discountBps": 1500 }],
+    "orderDiscount": null,
+    "expected": { "subtotal": 999, "discountTotal": 150, "taxTotal": 70, "total": 919, "lines": [{ "discount": 150, "tax": 70, "lineTotal": 919 }] }
+  }
+]

@@ -12,6 +12,8 @@ export type StoreWithRegisters = {
   currency: string;
   timezone: string;
   prices_include_tax: boolean;
+  max_cashier_discount_bps: number;
+  receipt_footer: string | null;
   registers: { id: string; name: string }[];
 };
 

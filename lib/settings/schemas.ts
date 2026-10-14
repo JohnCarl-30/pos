@@ -22,6 +22,19 @@ export const storeSchema = z.object({
   currency: z.string().trim().toUpperCase().refine(isCurrencyCode, "Use a 3-letter currency code like USD or EUR"),
   timezone: z.string().refine(isTimeZone, "Pick a valid time zone"),
   pricing: z.enum(["inclusive", "exclusive"]),
+  maxCashierDiscount: z
+    .string()
+    .trim()
+    .default("20")
+    .transform((value, ctx) => {
+      const bps = parsePercentToBps(value);
+      if (bps === null || bps > 10_000) {
+        ctx.addIssue({ code: "custom", message: "Enter a percentage from 0 to 100" });
+        return z.NEVER;
+      }
+      return bps;
+    }),
+  receiptFooter: z.preprocess((value) => (typeof value === "string" && value.trim() ? value.trim() : null), z.string().max(300, "Keep the footer under 300 characters").nullable()),
 });
 
 export const registerSchema = z.object({
