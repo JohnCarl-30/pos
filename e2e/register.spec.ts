@@ -1,23 +1,7 @@
-import { expect, test, type Page } from "@playwright/test";
-import { signIn } from "./helpers";
+import { expect, test } from "@playwright/test";
+import { openRegister, signIn } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
-
-async function openRegister(page: Page) {
-  await signIn(page, "cashier@demo.test");
-  await expect(page).toHaveURL(/\/register$/);
-  const picker = page.getByRole("button", { name: "Counter 1" });
-  const openTill = page.getByRole("button", { name: "Open till" });
-  const search = page.getByLabel("Search or scan a barcode");
-  await expect(picker.or(openTill).or(search)).toBeVisible();
-  if (await picker.isVisible()) await picker.click();
-  await expect(openTill.or(search)).toBeVisible();
-  if (await openTill.isVisible()) {
-    await page.getByLabel(/Starting cash/).fill("100");
-    await openTill.click();
-  }
-  await expect(search).toBeVisible();
-}
 
 test("a cashier sells with a discount and gives change", async ({ page }) => {
   await openRegister(page);
