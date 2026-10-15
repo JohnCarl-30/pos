@@ -21,6 +21,7 @@ export function summaryCsv(summary: SummaryReport, currency: string): CsvCell[][
     ["discounts", amount(summary.discounts)],
     ["tax", amount(summary.tax)],
     ["sales_total", amount(summary.sales_total)],
+    ["tips", amount(summary.tips)],
     ["refund_count", summary.refund_count],
     ["refunds_total", amount(summary.refunds_total)],
     ["refund_tax", amount(summary.refund_tax)],
@@ -46,7 +47,7 @@ export function productsCsv(rows: ProductReportRow[], currency: string): CsvCell
 export function staffCsv(rows: StaffReportRow[], currency: string): CsvCell[][] {
   const amount = (minor: number) => formatAmount(minor, currency);
   return [
-    ["staff", "sales", "sales_value", "refunds", "refunds_value", "voids", "voids_value", "cash_voids", "discounts", "flags"],
+    ["staff", "sales", "sales_value", "refunds", "refunds_value", "voids", "voids_value", "cash_voids", "discounts", "tips", "flags"],
     ...rows.map((row) => [
       row.name,
       row.sales_count,
@@ -57,6 +58,7 @@ export function staffCsv(rows: StaffReportRow[], currency: string): CsvCell[][] 
       amount(row.void_total),
       row.cash_void_count,
       amount(row.discounts),
+      amount(row.tips),
       staffFlags(row).map((flag) => flag.label).join("; "),
     ]),
   ];
@@ -65,7 +67,7 @@ export function staffCsv(rows: StaffReportRow[], currency: string): CsvCell[][] 
 export function cashupsCsv(rows: CashupRow[], currency: string, timeZone: string): CsvCell[][] {
   const amount = (minor: number) => formatAmount(minor, currency);
   return [
-    ["register", "opened_at", "closed_at", "opened_by", "closed_by", "float", "cash_sales", "cash_refunds", "expected", "counted", "difference", "note"],
+    ["register", "opened_at", "closed_at", "opened_by", "closed_by", "float", "cash_sales", "cash_tips", "cash_refunds", "expected", "counted", "difference", "note"],
     ...rows.map((row) => [
       row.register,
       localDateTime(row.opened_at, timeZone),
@@ -74,6 +76,7 @@ export function cashupsCsv(rows: CashupRow[], currency: string, timeZone: string
       row.closed_by ?? "",
       amount(row.opening_cash),
       amount(row.cash_sales),
+      amount(row.cash_tips),
       amount(row.cash_refunds),
       amount(row.expected_cash),
       row.counted_cash === null ? "" : amount(row.counted_cash),

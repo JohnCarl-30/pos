@@ -26,6 +26,8 @@ export type OrderDetailRow = {
   total: number;
   void_reason: string | null;
   voided_at: string | null;
+  tip: number;
+  order_name: string | null;
   register: { name: string } | null;
   store: { timezone: string } | null;
   session: { closed_at: string | null } | null;
@@ -33,7 +35,18 @@ export type OrderDetailRow = {
   discounter: { name: string } | null;
   voider: { name: string } | null;
   customer: { id: string; name: string } | null;
-  order_items: { id: string; line_number: number | null; name: string; sku: string; unit_price: number; quantity: number; discount: number; tax: number; line_total: number }[];
+  order_items: {
+    id: string;
+    line_number: number | null;
+    name: string;
+    sku: string;
+    unit_price: number;
+    quantity: number;
+    discount: number;
+    tax: number;
+    line_total: number;
+    order_item_modifiers: { option_name: string; sort_order: number }[];
+  }[];
   payments: { id: string; method: RefundMethod; amount: number; tendered: number | null; change: number | null; reference: string | null }[];
   refunds: {
     id: string;

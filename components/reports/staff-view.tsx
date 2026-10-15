@@ -21,6 +21,7 @@ export default function StaffView({ rows, range, money }: StaffViewProps) {
               <TableHead className="hidden text-right md:table-cell">Refunds</TableHead>
               <TableHead className="text-right">Voids</TableHead>
               <TableHead className="hidden text-right md:table-cell">Discounts</TableHead>
+              <TableHead className="hidden text-right md:table-cell">Tips</TableHead>
               <TableHead>Flags</TableHead>
             </TableRow>
           </TableHeader>
@@ -43,6 +44,7 @@ export default function StaffView({ rows, range, money }: StaffViewProps) {
                     {row.cash_void_count > 0 ? ` · ${row.cash_void_count} cash` : ""}
                   </TableCell>
                   <TableCell className="hidden text-right tabular-nums md:table-cell">{money(row.discounts)}</TableCell>
+                  <TableCell className="hidden text-right tabular-nums md:table-cell">{money(row.tips)}</TableCell>
                   <TableCell>
                     <span className="flex flex-wrap gap-1">
                       {flags.length === 0 ? <span className="text-soft">—</span> : flags.map((flag) => <Tag key={flag.rule} tone="amber" size="sm">{flag.label}</Tag>)}

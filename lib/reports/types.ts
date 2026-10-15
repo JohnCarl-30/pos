@@ -4,6 +4,7 @@ export type SummaryReport = {
   discounts: number;
   tax: number;
   sales_total: number;
+  tips: number;
   refund_count: number;
   refunds_total: number;
   refund_tax: number;
@@ -40,6 +41,7 @@ export type StaffReportRow = {
   void_total: number;
   cash_void_count: number;
   discounts: number;
+  tips: number;
 };
 
 export type CashupRow = {
@@ -51,6 +53,7 @@ export type CashupRow = {
   closed_by: string | null;
   opening_cash: number;
   cash_sales: number;
+  cash_tips: number;
   cash_refunds: number;
   expected_cash: number;
   counted_cash: number | null;

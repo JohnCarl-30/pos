@@ -25,6 +25,7 @@ export default function SummaryView({ summary, trend, range, money }: SummaryVie
         <Stat label="Refunds" value={money(summary.refunds_total)} />
         <Stat label="Discounts" value={money(summary.discounts)} />
         <Stat label="Tax" value={money(summary.net_tax)} />
+        <Stat label="Tips" value={money(summary.tips)} />
       </div>
       <DetailSection title={range.bucket === "hour" ? "Net sales by hour" : "Net sales by day"}>
         <TrendChart points={trend} kind={range.bucket} money={money} />

@@ -13,6 +13,7 @@ const base: StaffReportRow = {
   void_total: 0,
   cash_void_count: 0,
   discounts: 0,
+  tips: 0,
 };
 
 describe("staffFlags", () => {
