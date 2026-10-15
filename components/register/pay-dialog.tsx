@@ -73,7 +73,7 @@ function PayForm({ total, currency, offline, money, onComplete }: Omit<PayDialog
     <div className="flex flex-col gap-4 p-6">
       <DialogHeader>
         <DialogTitle>Take payment</DialogTitle>
-        <DialogDescription className="tabular-nums">Total {money(total)}</DialogDescription>
+        <DialogDescription>Add a tip if the customer offers one, then take the payment.</DialogDescription>
       </DialogHeader>
       <div role="group" aria-label="Tip" className="grid grid-cols-5 gap-2">
         {TIP_PRESETS.map((preset) => (
@@ -88,9 +88,12 @@ function PayForm({ total, currency, offline, money, onComplete }: Omit<PayDialog
       {tipChoice === "custom" && (
         <Input aria-label="Custom tip" inputMode="decimal" placeholder="0.00" className="min-h-11" value={customTip} onChange={(event) => setCustomTip(event.target.value)} />
       )}
-      <div className="flex justify-between tabular-nums">
-        <span>{tip > 0 ? `Tip ${money(tip)}` : "No tip"}</span>
-        <span className="lead-style font-medium">Due {money(due)}</span>
+      <div className="flex items-baseline justify-between gap-3 tabular-nums">
+        <span className="caption-style text-soft">
+          Total {money(total)}
+          {tip > 0 ? ` · Tip ${money(tip)}` : ""}
+        </span>
+        <span className="text-[20px] leading-none font-semibold">Due {money(due)}</span>
       </div>
       <div className="grid grid-cols-3 gap-2">
         {(["cash", "card", "other"] as PaymentMethod[]).map((method) => (

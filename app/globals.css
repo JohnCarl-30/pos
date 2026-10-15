@@ -221,7 +221,7 @@
 
   p,
   .p-style {
-    @apply text-[14px] leading-[1.15] font-normal tracking-normal;
+    @apply text-[14px] leading-[1.15] font-normal tracking-normal text-pretty;
   }
 
   .lead-style {

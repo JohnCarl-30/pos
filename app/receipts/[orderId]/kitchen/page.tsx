@@ -79,7 +79,7 @@ export default async function KitchenTicketPage({ params, searchParams }: Kitche
             ))}
           </ul>
         )}
-        <PrintButton />
+        <PrintButton label="Print ticket" />
       </article>
     </main>
   );
