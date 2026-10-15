@@ -15,7 +15,7 @@ import { verifyApprover } from "./approver";
 
 export type CloseTillState = {
   error: string | null;
-  summary: { opening_cash: number; cash_sales: number; cash_refunds: number; expected_cash: number; counted_cash: number; difference: number; voided_count: number } | null;
+  summary: { opening_cash: number; cash_sales: number; cash_tips: number; cash_refunds: number; expected_cash: number; counted_cash: number; difference: number; voided_count: number } | null;
 };
 
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
