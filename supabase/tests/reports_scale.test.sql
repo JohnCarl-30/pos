@@ -25,6 +25,10 @@ insert into public.orders (id, store_id, register_id, session_id, staff_id, rece
 insert into public.order_items (order_id, name, sku, unit_price, quantity, tax_rate_bps, tax, line_total)
   select o.id, 'Tea', 'TEA', 300, 1, 1000, 30, 330 from public.orders o;
 insert into public.payments (order_id, method, amount) select o.id, 'cash', 330 from public.orders o;
+analyze public.register_sessions;
+analyze public.orders;
+analyze public.order_items;
+analyze public.payments;
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}';

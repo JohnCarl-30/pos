@@ -836,3 +836,242 @@ revoke execute on function public.report_staff(uuid, timestamptz, timestamptz) f
 revoke execute on function public.report_cashups(uuid, timestamptz, timestamptz) from public, anon;
 grant execute on function public.report_staff(uuid, timestamptz, timestamptz) to authenticated;
 grant execute on function public.report_cashups(uuid, timestamptz, timestamptz) to authenticated;
+
+create or replace function public.create_refund(
+  p_order_id uuid,
+  p_session_id uuid,
+  p_lines jsonb,
+  p_payments jsonb,
+  p_approval_id uuid default null,
+  p_reason text default 'changed_mind',
+  p_note text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_staff_id uuid;
+  v_role public.staff_role;
+  v_note text := nullif(trim(p_note), '');
+  v_order record;
+  v_register_id uuid;
+  v_session_store uuid;
+  v_closed_at timestamptz;
+  v_line jsonb;
+  v_item record;
+  v_units integer;
+  v_priced jsonb;
+  v_item_ids uuid[] := '{}';
+  v_variant_ids uuid[] := '{}';
+  v_units_list integer[] := '{}';
+  v_restock boolean[] := '{}';
+  v_tracks boolean[] := '{}';
+  v_amounts bigint[] := '{}';
+  v_taxes bigint[] := '{}';
+  v_total bigint := 0;
+  v_tax_total bigint := 0;
+  v_payment jsonb;
+  v_method public.payment_method;
+  v_amount bigint;
+  v_reference text;
+  v_paid bigint := 0;
+  v_card bigint := 0;
+  v_other bigint := 0;
+  v_room bigint;
+  v_approval_id uuid;
+  v_approved_by uuid;
+  v_receipt integer;
+  v_refund_id uuid;
+  i integer;
+begin
+  select s.id, s.role into v_staff_id, v_role from public.staff s where s.user_id = (select auth.uid()) and s.active;
+  if v_staff_id is null then
+    raise exception 'not allowed' using errcode = '42501';
+  end if;
+  if p_reason is null or p_reason not in ('changed_mind', 'damaged', 'wrong_item', 'other') then
+    raise exception 'pick a reason for the refund' using errcode = '22023';
+  end if;
+  if p_reason = 'other' and v_note is null then
+    raise exception 'add a note for the refund' using errcode = '22023';
+  end if;
+  if length(v_note) > 300 then
+    raise exception 'keep the note under 300 characters' using errcode = '22023';
+  end if;
+
+  select o.id, o.store_id, o.status, o.receipt_number into v_order
+  from public.orders o
+  where o.id = p_order_id
+  for update;
+  if not found or not private.can_access_store(v_order.store_id) then
+    raise exception 'sale not found' using errcode = 'P0002';
+  end if;
+  if v_order.status = 'voided' then
+    raise exception 'sale is voided' using errcode = 'P0001';
+  end if;
+
+  select r.id, r.store_id, rs.closed_at into v_register_id, v_session_store, v_closed_at
+  from public.register_sessions rs
+  join public.registers r on r.id = rs.register_id
+  where rs.id = p_session_id
+  for update of rs;
+  if not found or v_session_store <> v_order.store_id then
+    raise exception 'not allowed' using errcode = '42501';
+  end if;
+  if v_closed_at is not null then
+    raise exception 'till is closed' using errcode = 'P0001';
+  end if;
+
+  if p_lines is null or jsonb_typeof(p_lines) <> 'array' or jsonb_array_length(p_lines) = 0 or jsonb_array_length(p_lines) > 200 then
+    raise exception 'pick at least one item to refund' using errcode = '22023';
+  end if;
+
+  for v_line in select value from jsonb_array_elements(p_lines) loop
+    select oi.id, oi.name, oi.quantity, oi.line_total, oi.tax, oi.variant_id,
+      coalesce(sl.track, false) as track,
+      coalesce((select sum(ri.quantity) from public.refund_items ri where ri.order_item_id = oi.id), 0)::integer as refunded
+    into v_item
+    from public.order_items oi
+    left join public.stock_levels sl on sl.store_id = v_order.store_id and sl.variant_id = oi.variant_id
+    where oi.id = (v_line ->> 'order_item_id')::uuid and oi.order_id = p_order_id;
+    if not found then
+      raise exception 'that item is not on this sale' using errcode = '22023';
+    end if;
+    if v_item.id = any(v_item_ids) then
+      raise exception 'list each item once' using errcode = '22023';
+    end if;
+    v_units := (v_line ->> 'quantity')::integer;
+    if v_units is null or v_units < 1 then
+      raise exception 'refund quantity must be at least 1' using errcode = '22023';
+    end if;
+    if v_units > v_item.quantity - v_item.refunded then
+      raise exception '%', format('only %s left to refund on %s', v_item.quantity - v_item.refunded, v_item.name) using errcode = '22023';
+    end if;
+
+    v_priced := private.refund_line(v_item.line_total, v_item.tax, v_item.quantity, v_item.refunded, v_units);
+    v_item_ids := v_item_ids || v_item.id;
+    v_variant_ids := v_variant_ids || v_item.variant_id;
+    v_units_list := v_units_list || v_units;
+    v_restock := v_restock || coalesce((v_line ->> 'restock')::boolean, true);
+    v_tracks := v_tracks || v_item.track;
+    v_amounts := v_amounts || (v_priced ->> 'amount')::bigint;
+    v_taxes := v_taxes || (v_priced ->> 'tax')::bigint;
+    v_total := v_total + (v_priced ->> 'amount')::bigint;
+    v_tax_total := v_tax_total + (v_priced ->> 'tax')::bigint;
+  end loop;
+
+  if p_payments is null or jsonb_typeof(p_payments) <> 'array' or jsonb_array_length(p_payments) > 10 then
+    raise exception 'add how the money goes back' using errcode = '22023';
+  end if;
+  for v_payment in select value from jsonb_array_elements(p_payments) loop
+    v_method := (v_payment ->> 'method')::public.payment_method;
+    v_amount := (v_payment ->> 'amount')::bigint;
+    v_reference := nullif(trim(v_payment ->> 'reference'), '');
+    if v_amount is null or v_amount <= 0 then
+      raise exception 'each refund payment needs an amount above 0' using errcode = '22023';
+    end if;
+    if v_reference is not null and v_method = 'cash' then
+      raise exception 'only card and other refunds can have a reference' using errcode = '22023';
+    end if;
+    if length(v_reference) > 100 then
+      raise exception 'keep the reference under 100 characters' using errcode = '22023';
+    end if;
+    v_paid := v_paid + v_amount;
+    if v_method = 'card' then v_card := v_card + v_amount; end if;
+    if v_method = 'other' then v_other := v_other + v_amount; end if;
+  end loop;
+  if v_paid <> v_total then
+    raise exception 'payments must add up to the refund' using errcode = '22023';
+  end if;
+
+  if v_card > 0 then
+    select coalesce((select sum(p.amount - p.tip) from public.payments p where p.order_id = p_order_id and p.method = 'card'), 0)
+      - coalesce((select sum(rp.amount) from public.refund_payments rp join public.refunds r on r.id = rp.refund_id where r.order_id = p_order_id and rp.method = 'card'), 0)
+    into v_room;
+    if v_card > v_room then
+      raise exception '%', format('card refunds can''t be more than %s', greatest(v_room, 0)) using errcode = '22023';
+    end if;
+  end if;
+  if v_other > 0 then
+    select coalesce((select sum(p.amount - p.tip) from public.payments p where p.order_id = p_order_id and p.method = 'other'), 0)
+      - coalesce((select sum(rp.amount) from public.refund_payments rp join public.refunds r on r.id = rp.refund_id where r.order_id = p_order_id and rp.method = 'other'), 0)
+    into v_room;
+    if v_other > v_room then
+      raise exception '%', format('other refunds can''t be more than %s', greatest(v_room, 0)) using errcode = '22023';
+    end if;
+  end if;
+
+  if v_role = 'cashier' then
+    select a.id, a.approved_by into v_approval_id, v_approved_by
+    from public.refund_approvals a
+    where a.id = p_approval_id
+      and a.store_id = v_order.store_id
+      and a.order_id = p_order_id
+      and a.requested_by = v_staff_id
+      and a.used_at is null
+      and a.expires_at > now()
+      and a.max_amount >= v_total
+    for update;
+    if not found then
+      raise exception 'refund needs approval' using errcode = 'P0001';
+    end if;
+    update public.refund_approvals set used_at = now() where id = v_approval_id;
+  else
+    v_approved_by := v_staff_id;
+  end if;
+
+  update public.registers set next_receipt_number = next_receipt_number + 1
+  where id = v_register_id
+  returning next_receipt_number - 1 into v_receipt;
+
+  insert into public.refunds (
+    order_id, store_id, register_id, session_id, receipt_number, staff_id, approval_id, approved_by,
+    reason, note, subtotal, tax_total, total
+  ) values (
+    p_order_id, v_order.store_id, v_register_id, p_session_id, v_receipt, v_staff_id, v_approval_id, v_approved_by,
+    p_reason, v_note, v_total - v_tax_total, v_tax_total, v_total
+  )
+  returning id into v_refund_id;
+
+  for i in 1..array_length(v_item_ids, 1) loop
+    insert into public.refund_items (refund_id, order_item_id, quantity, restock, amount, tax)
+    values (v_refund_id, v_item_ids[i], v_units_list[i], v_restock[i], v_amounts[i], v_taxes[i]);
+  end loop;
+
+  for v_payment in select value from jsonb_array_elements(p_payments) loop
+    insert into public.refund_payments (refund_id, method, amount, reference)
+    values (
+      v_refund_id,
+      (v_payment ->> 'method')::public.payment_method,
+      (v_payment ->> 'amount')::bigint,
+      nullif(trim(v_payment ->> 'reference'), '')
+    );
+  end loop;
+
+  perform 1 from public.stock_levels
+  where store_id = v_order.store_id and variant_id = any(v_variant_ids)
+  order by variant_id
+  for update;
+
+  for i in 1..array_length(v_item_ids, 1) loop
+    if v_restock[i] and v_tracks[i] then
+      insert into public.stock_movements (store_id, variant_id, quantity_change, reason, staff_id, note)
+      values (v_order.store_id, v_variant_ids[i], v_units_list[i], 'returned', v_staff_id,
+        'Refund #' || v_receipt || ' for receipt #' || v_order.receipt_number);
+    end if;
+  end loop;
+
+  update public.orders set status = case
+    when exists (
+      select 1 from public.order_items oi
+      where oi.order_id = p_order_id
+        and oi.quantity > coalesce((select sum(ri.quantity) from public.refund_items ri where ri.order_item_id = oi.id), 0)
+    ) then 'partially_refunded'::public.order_status
+    else 'refunded'::public.order_status
+  end
+  where id = p_order_id;
+
+  return jsonb_build_object('refund_id', v_refund_id, 'receipt_number', v_receipt, 'total', v_total);
+end;
+$$;

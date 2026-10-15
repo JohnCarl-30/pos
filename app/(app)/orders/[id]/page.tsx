@@ -51,7 +51,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
           <OrderActions
             orderId={order.id}
             receiptNumber={order.receipt_number}
-            total={order.total}
+            total={order.total + order.tip}
             context={toRefundContext(order)}
             availability={refundAvailability(order, session)}
             sessionId={session?.sessionId ?? null}

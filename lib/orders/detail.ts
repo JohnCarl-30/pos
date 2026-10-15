@@ -47,7 +47,7 @@ export type OrderDetailRow = {
     line_total: number;
     order_item_modifiers: { option_name: string; sort_order: number }[];
   }[];
-  payments: { id: string; method: RefundMethod; amount: number; tendered: number | null; change: number | null; reference: string | null }[];
+  payments: { id: string; method: RefundMethod; amount: number; tendered: number | null; change: number | null; reference: string | null; tip: number }[];
   refunds: {
     id: string;
     receipt_number: number;
@@ -97,7 +97,10 @@ export function toRefundContext(order: OrderDetailRow): RefundContext {
     timeZone: order.store?.timezone ?? "UTC",
     total: order.total,
     lines,
-    room: methodRoom(order.payments, order.refunds.flatMap((refund) => refund.refund_payments)),
+    room: methodRoom(
+      order.payments.map((payment) => ({ method: payment.method, amount: payment.amount - payment.tip })),
+      order.refunds.flatMap((refund) => refund.refund_payments),
+    ),
   };
 }
 

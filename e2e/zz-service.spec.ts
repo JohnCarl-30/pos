@@ -66,6 +66,23 @@ test("a cashier must pick a milk, adds a tip and prints a kitchen ticket", async
   await expect(page.getByText(/\$/)).toHaveCount(0);
 });
 
+test("voiding a tipped sale shows the full amount to hand back", async ({ page }) => {
+  await openRegister(page);
+  await page.getByRole("button", { name: "Add Latte" }).click();
+  await page.getByRole("button", { name: /^Small/ }).click();
+  await page.getByRole("dialog").getByRole("button", { name: /^Oat/ }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Add to sale" }).click();
+  await page.getByRole("button", { name: "Pay $5.09" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "15%" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Cash", exact: true }).click();
+  await page.getByRole("button", { name: "Complete sale" }).click();
+  await page.getByRole("button", { name: "Void sale" }).click();
+  await expect(page.getByRole("dialog").getByText(/The \$5\.85 sale/)).toBeVisible();
+  await page.getByLabel("Reason for the void").fill("Wrong drink");
+  await page.getByRole("dialog").getByRole("button", { name: "Void sale" }).click();
+  await expect(page.getByText(/voided\./)).toBeVisible();
+});
+
 test("closing the till counts the cash tip", async ({ page }) => {
   await openRegister(page);
   await page.getByRole("button", { name: "Close till" }).click();

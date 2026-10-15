@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(22);
+select plan(23);
 
 truncate table public.business, public.stores, public.staff, public.tax_classes,
   public.categories, public.products, public.customers restart identity cascade;
@@ -118,16 +118,22 @@ reset role;
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}';
 
+select throws_ok(
+  $$select public.create_refund((select id from public.orders where tip > 0), '00000000-0000-0000-0000-000000000011',
+    (select jsonb_build_array(jsonb_build_object('order_item_id', oi.id, 'quantity', 1, 'restock', true)) from public.order_items oi join public.orders o on o.id = oi.order_id where o.tip > 0),
+    '[{"method":"card","amount":1000},{"method":"cash","amount":375}]')$$,
+  '22023', 'card refunds can''t be more than 870', 'a card refund cannot hand back the card''s share of the tip'
+);
 select is(
   public.create_refund((select id from public.orders where tip > 0), '00000000-0000-0000-0000-000000000011',
     (select jsonb_build_array(jsonb_build_object('order_item_id', oi.id, 'quantity', 1, 'restock', true)) from public.order_items oi join public.orders o on o.id = oi.order_id where o.tip > 0),
-    '[{"method":"card","amount":1000},{"method":"cash","amount":375}]') ->> 'total',
+    '[{"method":"card","amount":870},{"method":"cash","amount":505}]') ->> 'total',
   '1375',
   'a refund gives back the sale, never the tip'
 );
 select is(
   public.report_summary('00000000-0000-0000-0000-0000000000b1', now() - interval '1 day', now() + interval '1 day') -> 'methods',
-  '{"cash":130,"card":475,"other":0}'::jsonb,
+  '{"cash":0,"card":605,"other":0}'::jsonb,
   'payment methods leave tips out, so they add up to net sales'
 );
 select is(
@@ -141,8 +147,8 @@ select is(
   'tips are credited to whoever rang up the sale'
 );
 select is(
-  public.close_register('00000000-0000-0000-0000-000000000011', 206),
-  '{"opening_cash":0,"cash_sales":505,"cash_tips":76,"cash_refunds":375,"expected_cash":206,"counted_cash":206,"difference":0,"voided_count":0}'::jsonb,
+  public.close_register('00000000-0000-0000-0000-000000000011', 76),
+  '{"opening_cash":0,"cash_sales":505,"cash_tips":76,"cash_refunds":505,"expected_cash":76,"counted_cash":76,"difference":0,"voided_count":0}'::jsonb,
   'cash tips are counted in the drawer'
 );
 select is(

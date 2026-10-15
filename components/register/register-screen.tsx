@@ -330,7 +330,7 @@ export default function RegisterScreen(props: RegisterScreenProps) {
           onOpenChange={setVoidOpen}
           orderId={done.orderId}
           receiptNumber={done.receiptNumber}
-          total={done.total}
+          total={done.total + done.tip}
           money={money}
           onVoided={() => {
             setVoidOpen(false);

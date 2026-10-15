@@ -51,7 +51,7 @@ const DETAIL_FIELDS = [
   "voider:staff!orders_voided_by_fkey(name)",
   "customer:customers(id, name)",
   "order_items(id, line_number, name, sku, unit_price, quantity, discount, tax, line_total, order_item_modifiers(option_name, sort_order))",
-  "payments(id, method, amount, tendered, change, reference)",
+  "payments(id, method, amount, tendered, change, reference, tip)",
   "refunds(id, receipt_number, created_at, reason, note, total, staff:staff!refunds_staff_id_fkey(name), approver:staff!refunds_approved_by_fkey(name), refund_items(order_item_id, quantity, restock, amount), refund_payments(method, amount, reference))",
 ].join(", ");
 

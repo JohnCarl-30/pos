@@ -28,8 +28,8 @@ const order: OrderDetailRow = {
     { id: "i1", line_number: 1, name: "Tea", sku: "TEA", unit_price: 300, quantity: 3, discount: 0, tax: 90, line_total: 990, order_item_modifiers: [] },
   ],
   payments: [
-    { id: "p1", method: "card", amount: 500, tendered: null, change: null, reference: null },
-    { id: "p2", method: "cash", amount: 820, tendered: 1000, change: 180, reference: null },
+    { id: "p1", method: "card", amount: 500, tendered: null, change: null, reference: null, tip: 0 },
+    { id: "p2", method: "cash", amount: 820, tendered: 1000, change: 180, reference: null, tip: 0 },
   ],
   refunds: [
     {
@@ -59,6 +59,13 @@ describe("toRefundContext", () => {
     expect(context.room).toEqual({ card: 170, other: 0 });
     expect(context.timeZone).toBe("America/Chicago");
     expect(unitsLeft(context)).toBe(3);
+  });
+});
+
+describe("refund room with tips", () => {
+  it("leaves each payment's tip out of what can go back that way", () => {
+    const tipped: OrderDetailRow = { ...order, tip: 50, payments: [{ ...order.payments[0], tip: 50 }, order.payments[1]] };
+    expect(toRefundContext(tipped).room).toEqual({ card: 120, other: 0 });
   });
 });
 
