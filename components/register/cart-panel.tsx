@@ -93,11 +93,11 @@ export default function CartPanel(props: CartPanelProps) {
         <Input aria-label="Name for the order" placeholder="Name for the order (optional)" className="min-h-11" maxLength={40} value={props.orderName} onChange={(event) => props.onOrderName(event.target.value)} />
         {props.error && <span role="alert" className="caption-style text-danger">{props.error}</span>}
         {priced && (
-          <dl className="flex flex-col gap-1 tabular-nums">
-            <div className="flex justify-between"><dt>Subtotal</dt><dd>{money(priced.subtotal)}</dd></div>
-            {priced.discountTotal > 0 && <div className="flex justify-between"><dt>Discounts</dt><dd>−{money(priced.discountTotal)}</dd></div>}
-            <div className="flex justify-between"><dt>{props.pricesIncludeTax ? "Tax included" : "Tax"}</dt><dd>{money(priced.taxTotal)}</dd></div>
-            <div className="lead-style flex justify-between"><dt>Total</dt><dd>{money(priced.total)}</dd></div>
+          <dl className="flex flex-col gap-1.5 tabular-nums">
+            <div className="lead-style flex justify-between"><dt className="text-soft">Subtotal</dt><dd>{money(priced.subtotal)}</dd></div>
+            {priced.discountTotal > 0 && <div className="lead-style flex justify-between"><dt className="text-soft">Discounts</dt><dd>−{money(priced.discountTotal)}</dd></div>}
+            <div className="lead-style flex justify-between"><dt className="text-soft">{props.pricesIncludeTax ? "Tax included" : "Tax"}</dt><dd>{money(priced.taxTotal)}</dd></div>
+            <div className="mt-1 flex items-baseline justify-between border-t border-white/8 pt-2 text-[20px] leading-none font-semibold"><dt>Total</dt><dd>{money(priced.total)}</dd></div>
           </dl>
         )}
         {props.approved && <span role="status" className="caption-style text-success">Discount approved</span>}

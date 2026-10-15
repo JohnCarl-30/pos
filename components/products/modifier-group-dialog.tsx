@@ -98,6 +98,11 @@ function GroupForm({ group, currency, onSaved }: { group?: ModifierGroupRow; cur
       <fieldset className="flex flex-col gap-2">
         <legend className="eyebrow-style text-soft mb-2 font-normal">Options</legend>
         {errors.options && <span role="alert" className="caption-style text-danger">{errors.options}</span>}
+        <div aria-hidden className="caption-style text-subtle flex gap-2">
+          <span className="min-w-[8em] flex-1">Option</span>
+          <span className="w-[6em]">Price change</span>
+          <span className="w-[14em]">Active</span>
+        </div>
         {values.options.map((option, index) => (
           <div key={option.id ?? `new-${index}`} className="flex flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2">

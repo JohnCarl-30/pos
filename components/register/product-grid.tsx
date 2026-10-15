@@ -38,11 +38,11 @@ export default function ProductGrid({ products, categoryIndex, money, onPick }: 
               variant="ghost"
               size="none"
               aria-label={`Add ${product.name}`}
-              className={cn("text-foreground flex h-24 w-full flex-col items-start justify-between rounded-xl p-3 text-left whitespace-normal", color)}
+              className={cn("text-foreground flex h-24 w-full flex-col items-start gap-1.5 rounded-xl p-3 text-left whitespace-normal", color)}
               onClick={() => onPick(product)}
             >
               <span className="lead-style line-clamp-2">{product.name}</span>
-              <span className="caption-style flex w-full items-center justify-between gap-2">
+              <span className="caption-style text-soft flex w-full items-center justify-between gap-2 tabular-nums">
                 <span>{min === max ? money(min) : `${money(min)}+`}</span>
                 {outOfStock && <span className="text-danger">Out of stock</span>}
               </span>

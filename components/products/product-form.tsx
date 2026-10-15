@@ -133,6 +133,13 @@ export default function ProductForm({ initial, categories, taxClasses, currency,
         </div>
         <span className="caption-style text-subtle">Prices in {currency}. Tracking applies to the store you&apos;re viewing.</span>
         {errors.variants && <span role="alert" className="caption-style text-danger">{errors.variants}</span>}
+        <div aria-hidden className="caption-style text-subtle hidden gap-2 px-3 md:grid md:grid-cols-[1.2fr_1fr_1fr_0.8fr_0.8fr]">
+          <span>Variant</span>
+          <span>SKU</span>
+          <span>Barcode</span>
+          <span>Price</span>
+          <span>Cost</span>
+        </div>
         <ul className="divide-line-strong border-line-strong divide-y rounded-lg border">
           {values.variants.map((variant, index) => {
             const label = (field: string) => `Variant ${index + 1} ${field}`;
@@ -184,7 +191,8 @@ export default function ProductForm({ initial, categories, taxClasses, currency,
                   <li key={group.id} className="flex items-center gap-2">
                     <Checkbox id={`group-${group.id}`} checked={on} onCheckedChange={(checked) => toggleGroup(group.id, checked === true)} />
                     <Label htmlFor={`group-${group.id}`}>
-                      {group.name} <span className="caption-style text-soft">{groupRule(group.min_choices, group.max_choices)}</span>
+                      {group.name}
+                      <span className="caption-style text-soft"> · {groupRule(group.min_choices, group.max_choices)}</span>
                     </Label>
                     {on && (
                       <span className="ml-auto flex gap-1">

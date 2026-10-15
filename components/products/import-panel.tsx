@@ -45,7 +45,7 @@ export default function ImportPanel() {
   return (
     <div className="flex flex-col gap-6 p-4">
       <div className="flex flex-col gap-2">
-        <span className="caption-style text-subtle">
+        <span className="caption-style text-subtle max-w-[60ch] text-pretty leading-[1.4]">
           Columns: product, category, variant, sku, barcode, price, cost, tax_class, track, stock. Only product, sku and price are required. Existing SKUs are updated and nothing is deleted. Stock values become counts for the store you&apos;re viewing.
         </span>
         <form
