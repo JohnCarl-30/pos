@@ -12,6 +12,8 @@ import { saveProduct } from "@/lib/catalog/product-actions";
 import type { ProductFormInput } from "@/lib/catalog/product-form";
 import type { ActionResult } from "@/lib/action-result";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { groupRule } from "@/lib/modifiers";
 
 type Option = { id: string; name: string };
 type Variant = ProductFormInput["variants"][number];
@@ -21,13 +23,14 @@ type ProductFormProps = {
   categories: Option[];
   taxClasses: Option[];
   currency: string;
+  modifierGroups?: { id: string; name: string; min_choices: number; max_choices: number }[];
 };
 
 function emptyVariant(): Variant {
   return { name: "", sku: "", barcode: "", price: "", cost: "", track: true, active: true };
 }
 
-export default function ProductForm({ initial, categories, taxClasses, currency }: ProductFormProps) {
+export default function ProductForm({ initial, categories, taxClasses, currency, modifierGroups }: ProductFormProps) {
   const [values, setValues] = useState<ProductFormInput>(initial);
   const [state, action, pending] = useActionState<ActionResult, FormData>(saveProduct, null);
   const errors = state && !state.ok ? state.fieldErrors ?? {} : {};
@@ -52,6 +55,29 @@ export default function ProductForm({ initial, categories, taxClasses, currency 
 
   function removeVariant(index: number) {
     setValues((current) => ({ ...current, variants: current.variants.filter((_, i) => i !== index) }));
+  }
+
+  const attached = values.modifierGroupIds ?? [];
+  const orderedGroups = modifierGroups
+    ? [...attached.flatMap((id) => modifierGroups.filter((group) => group.id === id)), ...modifierGroups.filter((group) => !attached.includes(group.id))]
+    : [];
+
+  function toggleGroup(id: string, on: boolean) {
+    setValues((current) => {
+      const ids = current.modifierGroupIds ?? [];
+      return { ...current, modifierGroupIds: on ? [...ids.filter((entry) => entry !== id), id] : ids.filter((entry) => entry !== id) };
+    });
+  }
+
+  function moveGroup(id: string, direction: -1 | 1) {
+    setValues((current) => {
+      const ids = [...(current.modifierGroupIds ?? [])];
+      const index = ids.indexOf(id);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= ids.length) return current;
+      [ids[index], ids[target]] = [ids[target], ids[index]];
+      return { ...current, modifierGroupIds: ids };
+    });
   }
 
   return (
@@ -142,6 +168,37 @@ export default function ProductForm({ initial, categories, taxClasses, currency 
         </ul>
       </div>
 
+      {modifierGroups && (
+        <section className="flex flex-col gap-3">
+          <h2>Modifier groups</h2>
+          {orderedGroups.length === 0 ? (
+            <p className="text-subtle">
+              No groups yet. <Link href="/products/modifiers" className="underline underline-offset-2">Create one</Link> to offer choices like milk or extras.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {orderedGroups.map((group) => {
+                const on = attached.includes(group.id);
+                const position = attached.indexOf(group.id);
+                return (
+                  <li key={group.id} className="flex items-center gap-2">
+                    <Checkbox id={`group-${group.id}`} checked={on} onCheckedChange={(checked) => toggleGroup(group.id, checked === true)} />
+                    <Label htmlFor={`group-${group.id}`}>
+                      {group.name} <span className="caption-style text-soft">{groupRule(group.min_choices, group.max_choices)}</span>
+                    </Label>
+                    {on && (
+                      <span className="ml-auto flex gap-1">
+                        <Button type="button" variant="ghost" size="sm" aria-label={`Move ${group.name} up`} disabled={position === 0} onClick={() => moveGroup(group.id, -1)}>↑</Button>
+                        <Button type="button" variant="ghost" size="sm" aria-label={`Move ${group.name} down`} disabled={position === attached.length - 1} onClick={() => moveGroup(group.id, 1)}>↓</Button>
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      )}
       <div className="flex justify-end gap-2">
         <Button href="/products" variant="ghost" size="md">Back to products</Button>
         <Button type="submit" variant="primary" size="md" disabled={pending}>

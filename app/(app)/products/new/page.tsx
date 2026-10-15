@@ -12,9 +12,10 @@ export default async function NewProductPage() {
   const staff = await requireRole("manager");
   const store = await getCurrentStore(staff);
   const supabase = await createClient();
-  const [categories, { data: taxClasses }] = await Promise.all([
+  const [categories, { data: taxClasses }, { data: modifierGroups }] = await Promise.all([
     loadCategories(supabase),
     supabase.from("tax_classes").select("id, name, is_default").order("name"),
+    supabase.from("modifier_groups").select("id, name, min_choices, max_choices").eq("active", true).order("sort_order").order("name"),
   ]);
   const defaultTax = taxClasses?.find((taxClass) => taxClass.is_default)?.id ?? taxClasses?.[0]?.id ?? "";
 
@@ -27,6 +28,7 @@ export default async function NewProductPage() {
           categories={categories}
           taxClasses={taxClasses ?? []}
           currency={store?.currency ?? "USD"}
+          modifierGroups={modifierGroups ?? []}
         />
       </ScrollArea>
     </section>

@@ -39,6 +39,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         actions={
           <>
             <CategoriesDialog categories={categories} />
+            <Button href="/products/modifiers" variant="ghost" size="md">Modifiers</Button>
             <Button href="/products/import" variant="ghost" size="md">Import CSV</Button>
             <Button href="/products/stock" variant="ghost" size="md">Stock history</Button>
             <Button href="/products/new" variant="primary" size="md">New product</Button>

@@ -28,11 +28,13 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   if (!GUID.test(id) || !store) notFound();
 
   const supabase = await createClient();
-  const [{ data: product }, { data: variants }, categories, { data: taxClasses }] = await Promise.all([
+  const [{ data: product }, { data: variants }, categories, { data: taxClasses }, { data: modifierGroups }, { data: attachedGroups }] = await Promise.all([
     supabase.from("products").select("id, name, description, active, category_id, tax_class_id").eq("id", id).maybeSingle(),
     supabase.from("product_variants").select("id, name, sku, barcode, price, cost, active, sort_order, stock_levels(store_id, quantity, track, low_stock_at)").eq("product_id", id).order("sort_order"),
     loadCategories(supabase),
     supabase.from("tax_classes").select("id, name").order("name"),
+    supabase.from("modifier_groups").select("id, name, min_choices, max_choices").eq("active", true).order("sort_order").order("name"),
+    supabase.from("product_modifier_groups").select("group_id, sort_order").eq("product_id", id).order("sort_order"),
   ]);
   if (!product) notFound();
 
@@ -71,7 +73,8 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         {current === "details" && (
           <ProductForm
             key={formKey}
-            initial={toProductFormInput(product, variants ?? [], store.id, store.currency)}
+            initial={{ ...toProductFormInput(product, variants ?? [], store.id, store.currency), modifierGroupIds: (attachedGroups ?? []).map((entry) => entry.group_id) }}
+            modifierGroups={modifierGroups ?? []}
             categories={categories}
             taxClasses={taxClasses ?? []}
             currency={store.currency}
