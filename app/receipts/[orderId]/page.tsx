@@ -20,11 +20,13 @@ type ReceiptOrder = {
   discount_total: number;
   tax_total: number;
   total: number;
+  tip: number;
+  order_name: string | null;
   store: { name: string; address: string | null; currency: string; timezone: string; receipt_footer: string | null; prices_include_tax: boolean } | null;
   register: { name: string } | null;
   staff: { name: string } | null;
   customer: { name: string } | null;
-  order_items: { id: string; line_number: number | null; name: string; unit_price: number; quantity: number; discount: number; tax_rate_bps: number; tax: number; line_total: number }[];
+  order_items: { id: string; line_number: number | null; name: string; unit_price: number; quantity: number; discount: number; tax_rate_bps: number; tax: number; line_total: number; order_item_modifiers: { option_name: string; sort_order: number }[] }[];
   payments: { id: string; method: keyof typeof METHOD_LABELS; amount: number; tendered: number | null; change: number | null; reference: string | null }[];
 };
 
@@ -41,7 +43,7 @@ export default async function ReceiptPage({ params, searchParams }: ReceiptPageP
     supabase
       .from("orders")
       .select(
-        "id, receipt_number, created_at, subtotal, discount_total, tax_total, total, store:stores(name, address, currency, timezone, receipt_footer, prices_include_tax), register:registers(name), staff:staff!orders_staff_id_fkey(name), customer:customers(name), order_items(id, line_number, name, unit_price, quantity, discount, tax_rate_bps, tax, line_total), payments(id, method, amount, tendered, change, reference)",
+        "id, receipt_number, created_at, subtotal, discount_total, tax_total, total, tip, order_name, store:stores(name, address, currency, timezone, receipt_footer, prices_include_tax), register:registers(name), staff:staff!orders_staff_id_fkey(name), customer:customers(name), order_items(id, line_number, name, unit_price, quantity, discount, tax_rate_bps, tax, line_total, order_item_modifiers(option_name, sort_order)), payments(id, method, amount, tendered, change, reference)",
       )
       .eq("id", orderId)
       .maybeSingle(),
@@ -77,6 +79,9 @@ export default async function ReceiptPage({ params, searchParams }: ReceiptPageP
           {items.map((item) => (
             <li key={item.id} className="flex flex-col">
               <span>{item.name}</span>
+              {item.order_item_modifiers.length > 0 && (
+                <span className="pl-2">{[...item.order_item_modifiers].sort((a, b) => a.sort_order - b.sort_order).map((modifier) => modifier.option_name).join(", ")}</span>
+              )}
               <span className="flex justify-between">
                 <span>
                   {item.quantity} × {money(item.unit_price)}
@@ -97,6 +102,12 @@ export default async function ReceiptPage({ params, searchParams }: ReceiptPageP
             </div>
           ))}
           <div className="flex justify-between font-bold"><dt>Total</dt><dd>{money(order.total)}</dd></div>
+          {order.tip > 0 && (
+            <>
+              <div className="flex justify-between"><dt>Tip</dt><dd>{money(order.tip)}</dd></div>
+              <div className="flex justify-between font-bold"><dt>Paid</dt><dd>{money(order.total + order.tip)}</dd></div>
+            </>
+          )}
         </dl>
         <dl className="flex flex-col gap-0.5 border-t border-dashed border-current pt-2">
           {order.payments.map((payment) => (

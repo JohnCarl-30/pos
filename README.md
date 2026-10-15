@@ -61,6 +61,12 @@ Managers and owners get reports for the store picked in the sidebar, for today, 
 
 Refunds count on the day they happen, and voided sales never count, so a day's report matches its tills and doesn't change later.
 
+## Cafés & counters
+
+- **Modifiers:** set up groups like "Milk (pick 1): whole, oat +$0.50" or "Extras (up to 3)" under Products → Modifiers, then tick them on each product. The register asks for required choices, shows the price as you go, and prices everything in the database.
+- **Tips:** add No tip, 10%, 15%, 20% or a custom amount when taking payment. Tips are never taxed, discounted or counted as sales. Cash tips count in the drawer, and reports show tips separately.
+- **Kitchen tickets:** tick "Kitchen" on categories that the kitchen makes. After a sale, **Print kitchen ticket** prints an 80mm ticket with the order number, an optional name and each item's choices, without prices. Turn on **Auto-print kitchen tickets** to print one after every kitchen sale on that device. For no print dialog at all, run the browser in kiosk printing mode (for example Chrome's `--kiosk-printing`).
+
 ## Scripts
 
 | Script | What it does |

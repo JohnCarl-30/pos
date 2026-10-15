@@ -71,7 +71,7 @@ set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000a2","r
 
 select is(
   public.report_summary('00000000-0000-0000-0000-0000000000b1', '2026-10-14 00:00+08', '2026-10-15 00:00+08'),
-  '{"sales_count":2,"gross":1850,"discounts":125,"tax":172,"sales_total":1897,"refund_count":1,"refunds_total":330,"refund_tax":30,"net_sales":1567,"net_tax":142,"average_sale":948,"void_count":1,"void_total":330,"methods":{"cash":1567,"card":0,"other":0}}'::jsonb,
+  '{"sales_count":2,"gross":1850,"discounts":125,"tax":172,"sales_total":1897,"tips":0,"refund_count":1,"refunds_total":330,"refund_tax":30,"net_sales":1567,"net_tax":142,"average_sale":948,"void_count":1,"void_total":330,"methods":{"cash":1567,"card":0,"other":0}}'::jsonb,
   'the summary adds up a local day to the cent'
 );
 select is(

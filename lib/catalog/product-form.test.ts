@@ -60,4 +60,11 @@ describe("parseProductForm", () => {
       fieldErrors: { name: "Enter a product name", variants: "Keep at least one active variant" },
     });
   });
+  it("passes modifier groups through only when the form has them", () => {
+    const group = "00000000-0000-4000-8000-0000000000cc";
+    const withGroups = parseProductForm({ ...base, modifierGroupIds: [group, "bad"] }, "EUR");
+    expect(withGroups.ok && withGroups.product.modifier_group_ids).toEqual([group]);
+    const without = parseProductForm(base, "EUR");
+    expect(without.ok && "modifier_group_ids" in without.product).toBe(false);
+  });
 });

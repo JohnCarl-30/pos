@@ -1,15 +1,16 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useTransition } from "react";
 import Button from "@/components/_ui/button";
 import Field from "@/components/_ui/field";
 import { Input } from "@/components/_ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/_ui/dialog";
 import FormMessage from "@/components/_common/form-message";
-import { deleteCategory, moveCategory, saveCategory } from "@/lib/catalog/category-actions";
+import { Checkbox } from "@/components/_ui/checkbox";
+import { deleteCategory, moveCategory, saveCategory, setCategoryKitchen } from "@/lib/catalog/category-actions";
 import type { ActionResult } from "@/lib/action-result";
 
-type Category = { id: string; name: string };
+type Category = { id: string; name: string; kitchen: boolean };
 
 function CategoryRow({ category, index, last }: { category: Category; index: number; last: boolean }) {
   const [name, setName] = useState(category.name);
@@ -18,12 +19,28 @@ function CategoryRow({ category, index, last }: { category: Category; index: num
   const [moveState, moveAction, moving] = useActionState<ActionResult, FormData>(moveCategory, null);
   const [deleteState, deleteAction, deleting] = useActionState<ActionResult, FormData>(deleteCategory, null);
 
+  const [kitchen, setKitchen] = useState(category.kitchen);
+  const [kitchenError, setKitchenError] = useState<string | null>(null);
+  const [, startKitchen] = useTransition();
+
+  function changeKitchen(next: boolean) {
+    setKitchen(next);
+    setKitchenError(null);
+    startKitchen(async () => {
+      const result = await setCategoryKitchen(category.id, next);
+      if (!result?.ok) {
+        setKitchen(!next);
+        setKitchenError(result && !result.ok ? result.error ?? "Something went wrong. Try again." : "Something went wrong. Try again.");
+      }
+    });
+  }
+
   if (category.name !== prevName) {
     setPrevName(category.name);
     setName(category.name);
   }
 
-  const error = (saveState && !saveState.ok ? saveState.fieldErrors?.name ?? saveState.error : undefined) ?? (deleteState && !deleteState.ok ? deleteState.error : undefined) ?? (moveState && !moveState.ok ? moveState.error : undefined);
+  const error = kitchenError ?? (saveState && !saveState.ok ? saveState.fieldErrors?.name ?? saveState.error : undefined) ?? (deleteState && !deleteState.ok ? deleteState.error : undefined) ?? (moveState && !moveState.ok ? moveState.error : undefined);
 
   return (
     <li className="flex flex-col gap-1 px-3 py-2">
@@ -33,6 +50,10 @@ function CategoryRow({ category, index, last }: { category: Category; index: num
           <Input name="name" aria-label={`Name for ${category.name}`} value={name} onChange={(event) => setName(event.target.value)} maxLength={60} />
           <Button type="submit" variant="secondary" size="sm" disabled={saving || name.trim() === category.name}>Rename</Button>
         </form>
+        <label className="caption-style text-soft flex items-center gap-1.5">
+          <Checkbox aria-label={`${category.name} goes to the kitchen`} checked={kitchen} onCheckedChange={(checked) => changeKitchen(checked === true)} />
+          Kitchen
+        </label>
         <form action={moveAction}>
           <input type="hidden" name="id" value={category.id} />
           <input type="hidden" name="direction" value="-1" />
@@ -92,7 +113,7 @@ export default function CategoriesDialog({ categories }: { categories: Category[
         <div key={openCount} className="flex flex-col gap-4 p-6">
           <DialogHeader>
             <DialogTitle>Categories</DialogTitle>
-            <DialogDescription>The register groups products by category, in this order.</DialogDescription>
+            <DialogDescription>The register groups products by category, in this order. Tick Kitchen for categories that print on kitchen tickets.</DialogDescription>
           </DialogHeader>
           {categories.length > 0 && (
             <ul className="divide-line-strong border-line-strong divide-y rounded-lg border">

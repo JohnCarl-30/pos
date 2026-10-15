@@ -7,6 +7,7 @@ import { Label } from "@/components/_ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/_ui/dialog";
 import { summarisePayments, type PaymentInput, type PaymentMethod } from "@/lib/checkout";
 import { formatAmount, parseMoney } from "@/lib/money";
+import { TIP_PRESETS, tipFor } from "@/lib/tips";
 
 type PayDialogProps = {
   open: boolean;
@@ -15,7 +16,7 @@ type PayDialogProps = {
   offline: boolean;
   money: (minor: number) => string;
   onOpenChange: (open: boolean) => void;
-  onComplete: (payments: PaymentInput[]) => Promise<string | null>;
+  onComplete: (payments: PaymentInput[], tip: number) => Promise<string | null>;
 };
 
 type Row = { key: number; method: PaymentMethod; amount: string; tendered: string; reference: string };
@@ -27,8 +28,14 @@ function PayForm({ total, currency, offline, money, onComplete }: Omit<PayDialog
   const [nextKey, setNextKey] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [tipChoice, setTipChoice] = useState<number | "custom">(0);
+  const [customTip, setCustomTip] = useState("");
+  const customParsed = tipChoice === "custom" ? parseMoney(customTip, currency) : null;
+  const tip = tipChoice === "custom" ? (customParsed !== null && customParsed >= 0 ? customParsed : 0) : tipFor(total, tipChoice);
+  const due = total + tip;
 
   let parseError: string | null = null;
+  if (tipChoice === "custom" && customTip.trim() !== "" && (customParsed === null || customParsed < 0)) parseError = "Enter the tip, like 1.00";
   const payments: PaymentInput[] = rows.map((row) => {
     const amount = parseMoney(row.amount, currency);
     if (amount === null) parseError ??= `Enter the ${METHOD_LABELS[row.method].toLowerCase()} amount, like 5.00`;
@@ -36,7 +43,7 @@ function PayForm({ total, currency, offline, money, onComplete }: Omit<PayDialog
     if (row.method === "cash" && row.tendered.trim() !== "" && tendered === null) parseError ??= "Enter the cash received, like 20.00";
     return { method: row.method, amount: amount ?? 0, tendered, reference: row.reference.trim() || null };
   });
-  const summary = summarisePayments(total, payments);
+  const summary = summarisePayments(due, payments);
   const message = error ?? parseError ?? summary.error;
 
   function add(method: PaymentMethod) {
@@ -53,7 +60,7 @@ function PayForm({ total, currency, offline, money, onComplete }: Omit<PayDialog
   async function complete() {
     setPending(true);
     try {
-      const result = await onComplete(payments);
+      const result = await onComplete(payments, tip);
       if (result) setError(result);
     } catch {
       setError("Couldn't reach the server. Check the connection and try again.");
@@ -66,8 +73,25 @@ function PayForm({ total, currency, offline, money, onComplete }: Omit<PayDialog
     <div className="flex flex-col gap-4 p-6">
       <DialogHeader>
         <DialogTitle>Take payment</DialogTitle>
-        <DialogDescription>Total {money(total)}</DialogDescription>
+        <DialogDescription className="tabular-nums">Total {money(total)}</DialogDescription>
       </DialogHeader>
+      <div role="group" aria-label="Tip" className="grid grid-cols-5 gap-2">
+        {TIP_PRESETS.map((preset) => (
+          <Button key={preset.bps} variant="secondary" size="md" aria-pressed={tipChoice === preset.bps} className="aria-pressed:bg-primary aria-pressed:text-primary-foreground min-h-11 px-1" onClick={() => setTipChoice(preset.bps)}>
+            {preset.label}
+          </Button>
+        ))}
+        <Button variant="secondary" size="md" aria-pressed={tipChoice === "custom"} className="aria-pressed:bg-primary aria-pressed:text-primary-foreground min-h-11 px-1" onClick={() => setTipChoice("custom")}>
+          Custom
+        </Button>
+      </div>
+      {tipChoice === "custom" && (
+        <Input aria-label="Custom tip" inputMode="decimal" placeholder="0.00" className="min-h-11" value={customTip} onChange={(event) => setCustomTip(event.target.value)} />
+      )}
+      <div className="flex justify-between tabular-nums">
+        <span>{tip > 0 ? `Tip ${money(tip)}` : "No tip"}</span>
+        <span className="lead-style font-medium">Due {money(due)}</span>
+      </div>
       <div className="grid grid-cols-3 gap-2">
         {(["cash", "card", "other"] as PaymentMethod[]).map((method) => (
           <Button key={method} variant="secondary" size="md" className="min-h-11" disabled={summary.remaining === 0} onClick={() => add(method)}>

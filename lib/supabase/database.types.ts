@@ -63,6 +63,7 @@ export type Database = {
         Row: {
           created_at: string;
           id: string;
+          kitchen: boolean;
           name: string;
           sort_order: number;
         };
@@ -70,12 +71,14 @@ export type Database = {
         Insert: {
           created_at?: string;
           id?: string;
+          kitchen?: boolean;
           name: string;
           sort_order?: number;
         };
         Update: {
           created_at?: string;
           id?: string;
+          kitchen?: boolean;
           name?: string;
           sort_order?: number;
         };
@@ -168,6 +171,122 @@ export type Database = {
           },
         ];
       };
+      modifier_groups: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          id: string;
+          max_choices: number;
+          min_choices: number;
+          name: string;
+          sort_order: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          id?: string;
+          max_choices?: number;
+          min_choices?: number;
+          name: string;
+          sort_order?: number;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          id?: string;
+          max_choices?: number;
+          min_choices?: number;
+          name?: string;
+          sort_order?: number;
+        };
+        Relationships: [];
+      };
+      modifier_options: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          group_id: string;
+          id: string;
+          name: string;
+          price_delta: number;
+          sort_order: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          group_id: string;
+          id?: string;
+          name: string;
+          price_delta?: number;
+          sort_order?: number;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          group_id?: string;
+          id?: string;
+          name?: string;
+          price_delta?: number;
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "modifier_options_group_id_fkey";
+            columns: ["group_id"];
+            isOneToOne: false;
+            referencedRelation: "modifier_groups";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      order_item_modifiers: {
+        Row: {
+          group_name: string;
+          id: string;
+          option_id: string | null;
+          option_name: string;
+          order_item_id: string;
+          price_delta: number;
+          sort_order: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          group_name: string;
+          id?: string;
+          option_id?: string | null;
+          option_name: string;
+          order_item_id: string;
+          price_delta: number;
+          sort_order?: number;
+        };
+        Update: {
+          group_name?: string;
+          id?: string;
+          option_id?: string | null;
+          option_name?: string;
+          order_item_id?: string;
+          price_delta?: number;
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "order_item_modifiers_option_id_fkey";
+            columns: ["option_id"];
+            isOneToOne: false;
+            referencedRelation: "modifier_options";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_item_modifiers_order_item_id_fkey";
+            columns: ["order_item_id"];
+            isOneToOne: false;
+            referencedRelation: "order_items";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       order_items: {
         Row: {
           created_at: string;
@@ -246,6 +365,7 @@ export type Database = {
           discount_by: string | null;
           discount_total: number;
           id: string;
+          order_name: string | null;
           receipt_number: number;
           register_id: string;
           session_id: string;
@@ -254,6 +374,7 @@ export type Database = {
           store_id: string;
           subtotal: number;
           tax_total: number;
+          tip: number;
           total: number;
           void_reason: string | null;
           voided_at: string | null;
@@ -267,6 +388,7 @@ export type Database = {
           discount_by?: string | null;
           discount_total?: number;
           id?: string;
+          order_name?: string | null;
           receipt_number: number;
           register_id: string;
           session_id: string;
@@ -275,6 +397,7 @@ export type Database = {
           store_id: string;
           subtotal: number;
           tax_total: number;
+          tip?: number;
           total: number;
           void_reason?: string | null;
           voided_at?: string | null;
@@ -287,6 +410,7 @@ export type Database = {
           discount_by?: string | null;
           discount_total?: number;
           id?: string;
+          order_name?: string | null;
           receipt_number?: number;
           register_id?: string;
           session_id?: string;
@@ -295,6 +419,7 @@ export type Database = {
           store_id?: string;
           subtotal?: number;
           tax_total?: number;
+          tip?: number;
           total?: number;
           void_reason?: string | null;
           voided_at?: string | null;
@@ -369,6 +494,7 @@ export type Database = {
           order_id: string;
           reference: string | null;
           tendered: number | null;
+          tip: number;
         };
         ComputedFields: never;
         Insert: {
@@ -380,6 +506,7 @@ export type Database = {
           order_id: string;
           reference?: string | null;
           tendered?: number | null;
+          tip?: number;
         };
         Update: {
           amount?: number;
@@ -390,6 +517,7 @@ export type Database = {
           order_id?: string;
           reference?: string | null;
           tendered?: number | null;
+          tip?: number;
         };
         Relationships: [
           {
@@ -397,6 +525,40 @@ export type Database = {
             columns: ["order_id"];
             isOneToOne: false;
             referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      product_modifier_groups: {
+        Row: {
+          group_id: string;
+          product_id: string;
+          sort_order: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          group_id: string;
+          product_id: string;
+          sort_order?: number;
+        };
+        Update: {
+          group_id?: string;
+          product_id?: string;
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "product_modifier_groups_group_id_fkey";
+            columns: ["group_id"];
+            isOneToOne: false;
+            referencedRelation: "modifier_groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_modifier_groups_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
             referencedColumns: ["id"];
           },
         ];
@@ -1144,8 +1306,10 @@ export type Database = {
           p_customer_id?: string;
           p_lines: Json;
           p_order_discount?: Json;
+          p_order_name?: string;
           p_payments?: Json;
           p_session_id: string;
+          p_tip?: number;
         };
         Returns: Json;
       };
@@ -1183,6 +1347,7 @@ export type Database = {
         Returns: {
           cash_refunds: number;
           cash_sales: number;
+          cash_tips: number;
           close_note: string;
           closed_at: string;
           closed_by: string;
@@ -1221,6 +1386,7 @@ export type Database = {
           sales_count: number;
           sales_total: number;
           staff_id: string;
+          tips: number;
           void_count: number;
           void_total: number;
         }[];
@@ -1244,6 +1410,7 @@ export type Database = {
           sales_total: number;
         }[];
       };
+      save_modifier_group: { Args: { p_group: Json }; Returns: string };
       save_product: {
         Args: { p_product: Json; p_store_id: string; p_variants: Json };
         Returns: string;

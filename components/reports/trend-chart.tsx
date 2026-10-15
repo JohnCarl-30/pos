@@ -22,7 +22,7 @@ export default function TrendChart({ points, kind, money }: TrendChartProps) {
           >
             <div className="flex items-end" style={{ flexBasis: `${positivePart}%` }}>
               {!bar.negative && (
-                <div className="bg-primary/80 group-hover:bg-primary group-focus-visible:bg-primary w-full rounded-t-[2px] transition-colors duration-150" style={{ height: `${bar.height}%` }} />
+                <div className="bg-primary/80 group-hover:bg-primary group-focus:bg-primary w-full rounded-t-[2px] transition-colors duration-150" style={{ height: `${bar.height}%` }} />
               )}
             </div>
             {positivePart < 100 && (
@@ -32,7 +32,7 @@ export default function TrendChart({ points, kind, money }: TrendChartProps) {
             )}
             <span
               aria-hidden
-              className="caption-style bg-popover pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 rounded-md px-2 py-1 whitespace-nowrap tabular-nums shadow-overlay group-hover:block group-focus-visible:block"
+              className="caption-style bg-popover pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 rounded-md px-2 py-1 whitespace-nowrap tabular-nums shadow-overlay group-hover:block group-focus:block"
             >
               {label(bar.bucket)} · {money(bar.net)}
             </span>

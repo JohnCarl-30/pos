@@ -11,6 +11,7 @@ export const saleSchema = z.object({
         quantity: z.number().int().min(1).max(9_999),
         discountBps: z.number().int().min(0).max(10_000).nullable().optional(),
         discountAmount: money.nullable().optional(),
+        optionIds: z.array(z.guid()).max(50).optional(),
       }),
     )
     .min(1)
@@ -28,6 +29,8 @@ export const saleSchema = z.object({
       }),
     )
     .max(10),
+  tip: money.optional(),
+  orderName: z.string().trim().max(40).optional(),
 });
 
 export type SaleInput = z.infer<typeof saleSchema>;

@@ -13,4 +13,11 @@ describe("saleSchema", () => {
     expect(saleSchema.safeParse({ sessionId: id, lines: [{ variantId: id, quantity: 1.5 }], orderDiscount: null, approvalId: null, customerId: null, payments: [] }).success).toBe(false);
     expect(saleSchema.safeParse({ sessionId: id, lines: [{ variantId: id, quantity: 1 }], orderDiscount: null, approvalId: null, customerId: null, payments: [{ method: "cheque", amount: 1 }] }).success).toBe(false);
   });
+  it("checks choices, tips and the order name", () => {
+    const sale = { sessionId: id, lines: [{ variantId: id, quantity: 1, optionIds: [id] }], orderDiscount: null, approvalId: null, customerId: null, payments: [{ method: "card", amount: 100 }], tip: 10, orderName: "Sam" };
+    expect(saleSchema.safeParse(sale).success).toBe(true);
+    expect(saleSchema.safeParse({ ...sale, tip: -1 }).success).toBe(false);
+    expect(saleSchema.safeParse({ ...sale, orderName: "x".repeat(41) }).success).toBe(false);
+    expect(saleSchema.safeParse({ ...sale, lines: [{ variantId: id, quantity: 1, optionIds: ["nope"] }] }).success).toBe(false);
+  });
 });

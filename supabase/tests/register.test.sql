@@ -144,7 +144,7 @@ select throws_ok(
 );
 select is(
   public.close_register((select id from public.register_sessions where register_id = '00000000-0000-0000-0000-0000000000d1' and closed_at is null), 5700, 'Shift end'),
-  '{"opening_cash":5000,"cash_sales":660,"cash_refunds":0,"expected_cash":5660,"counted_cash":5700,"difference":40,"voided_count":0}'::jsonb,
+  '{"opening_cash":5000,"cash_sales":660,"cash_tips":0,"cash_refunds":0,"expected_cash":5660,"counted_cash":5700,"difference":40,"voided_count":0}'::jsonb,
   'closing reports expected and counted cash'
 );
 select throws_ok(
@@ -190,7 +190,7 @@ select throws_ok(
 );
 
 reset role;
-select ok(not has_function_privilege('anon', 'public.create_order(uuid, jsonb, jsonb, uuid, uuid, jsonb)', 'execute'), 'anonymous visitors cannot sell');
+select ok(not has_function_privilege('anon', 'public.create_order(uuid, jsonb, jsonb, uuid, uuid, jsonb, bigint, text)', 'execute'), 'anonymous visitors cannot sell');
 select is(
   (select array_agg(receipt_number order by receipt_number) from public.orders where register_id = '00000000-0000-0000-0000-0000000000d1'),
   array[1, 2, 3],

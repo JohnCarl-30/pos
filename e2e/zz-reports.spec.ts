@@ -26,8 +26,9 @@ test("a manager sees today's sales and the cashier who voided a cash sale", asyn
 test("a bar's value can be read with the keyboard", async ({ page }) => {
   await openReports(page);
   const bar = page.getByRole("img", { name: /^00:00 net sales/ });
+  const label = (await bar.getAttribute("aria-label")) ?? "";
   await bar.focus();
-  await expect(page.getByText("00:00 · $0.00")).toBeVisible();
+  await expect(page.getByText(label.replace(" net sales ", " · "), { exact: true })).toBeVisible();
 });
 
 test("the date range lives in the URL", async ({ page }) => {

@@ -42,7 +42,7 @@ export async function loadOrders(supabase: Client, storeId: string, filters: Ord
 }
 
 const DETAIL_FIELDS = [
-  "id, store_id, staff_id, receipt_number, created_at, status, subtotal, discount_total, tax_total, total, void_reason, voided_at",
+  "id, store_id, staff_id, receipt_number, created_at, status, subtotal, discount_total, tax_total, total, void_reason, voided_at, tip, order_name",
   "register:registers(name)",
   "store:stores(timezone)",
   "session:register_sessions(closed_at)",
@@ -50,8 +50,8 @@ const DETAIL_FIELDS = [
   "discounter:staff!orders_discount_by_fkey(name)",
   "voider:staff!orders_voided_by_fkey(name)",
   "customer:customers(id, name)",
-  "order_items(id, line_number, name, sku, unit_price, quantity, discount, tax, line_total)",
-  "payments(id, method, amount, tendered, change, reference)",
+  "order_items(id, line_number, name, sku, unit_price, quantity, discount, tax, line_total, order_item_modifiers(option_name, sort_order))",
+  "payments(id, method, amount, tendered, change, reference, tip)",
   "refunds(id, receipt_number, created_at, reason, note, total, staff:staff!refunds_staff_id_fkey(name), approver:staff!refunds_approved_by_fkey(name), refund_items(order_item_id, quantity, restock, amount), refund_payments(method, amount, reference))",
 ].join(", ");
 

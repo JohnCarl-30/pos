@@ -2,6 +2,7 @@
 
 import Button from "@/components/_ui/button";
 import { ScrollArea } from "@/components/_ui/scroll-area";
+import { Input } from "@/components/_ui/input";
 import { formatBpsAsPercent } from "@/lib/percent";
 import { isOverStock, type CartLine, type Discount } from "@/lib/register/cart";
 import type { PricedCart } from "@/lib/checkout";
@@ -17,7 +18,11 @@ type CartPanelProps = {
   approved: boolean;
   canPay: boolean;
   money: (minor: number) => string;
-  onQuantity: (variantId: string, quantity: number) => void;
+  onQuantity: (key: string, quantity: number) => void;
+  orderName: string;
+  onOrderName: (value: string) => void;
+  canEdit: (line: CartLine) => boolean;
+  onEditChoices: (line: CartLine) => void;
   onLineDiscount: (line: CartLine) => void;
   onOrderDiscount: () => void;
   onCustomer: () => void;
@@ -43,10 +48,11 @@ export default function CartPanel(props: CartPanelProps) {
         ) : (
           <ul className="divide-line-strong divide-y">
             {lines.map((line, index) => (
-              <li key={line.variantId} className="flex flex-col gap-2 px-4 py-3">
+              <li key={line.key} className="flex flex-col gap-2 px-4 py-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex min-w-0 flex-col gap-1">
                     <span className="truncate">{line.label}</span>
+                    {line.modifierLabel && <span className="caption-style text-soft">{line.modifierLabel}</span>}
                     <span className="caption-style text-subtle">
                       {money(line.price)} each
                       {line.discountBps !== null ? ` · ${formatBpsAsPercent(line.discountBps)}% off` : ""}
@@ -57,11 +63,14 @@ export default function CartPanel(props: CartPanelProps) {
                   <span className="tabular-nums">{priced ? money(priced.lines[index].lineTotal) : ""}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="secondary" size="md" className="min-h-11 min-w-11" aria-label={`One less ${line.label}`} onClick={() => props.onQuantity(line.variantId, line.quantity - 1)}>−</Button>
+                  <Button variant="secondary" size="md" className="min-h-11 min-w-11" aria-label={`One less ${line.label}`} onClick={() => props.onQuantity(line.key, line.quantity - 1)}>−</Button>
                   <span className="min-w-8 text-center" aria-label={`Quantity of ${line.label}`}>{line.quantity}</span>
-                  <Button variant="secondary" size="md" className="min-h-11 min-w-11" aria-label={`One more ${line.label}`} onClick={() => props.onQuantity(line.variantId, line.quantity + 1)}>+</Button>
-                  <Button variant="ghost" size="md" className="ml-auto min-h-11" aria-label={`Discount ${line.label}`} onClick={() => props.onLineDiscount(line)}>Discount</Button>
-                  <Button variant="ghost" size="md" className="min-h-11" aria-label={`Remove ${line.label}`} onClick={() => props.onQuantity(line.variantId, 0)}>Remove</Button>
+                  <Button variant="secondary" size="md" className="min-h-11 min-w-11" aria-label={`One more ${line.label}`} onClick={() => props.onQuantity(line.key, line.quantity + 1)}>+</Button>
+                  {props.canEdit(line) && (
+                    <Button variant="ghost" size="md" className="ml-auto min-h-11" aria-label={`Edit choices for ${line.label}`} onClick={() => props.onEditChoices(line)}>Edit</Button>
+                  )}
+                  <Button variant="ghost" size="md" className={props.canEdit(line) ? "min-h-11" : "ml-auto min-h-11"} aria-label={`Discount ${line.label}`} onClick={() => props.onLineDiscount(line)}>Discount</Button>
+                  <Button variant="ghost" size="md" className="min-h-11" aria-label={`Remove ${line.label}`} onClick={() => props.onQuantity(line.key, 0)}>Remove</Button>
                 </div>
               </li>
             ))}
@@ -81,6 +90,7 @@ export default function CartPanel(props: CartPanelProps) {
             <Button variant="secondary" size="md" className="min-h-11 flex-1" onClick={props.onCustomer}>+ Customer</Button>
           )}
         </div>
+        <Input aria-label="Name for the order" placeholder="Name for the order (optional)" className="min-h-11" maxLength={40} value={props.orderName} onChange={(event) => props.onOrderName(event.target.value)} />
         {props.error && <span role="alert" className="caption-style text-danger">{props.error}</span>}
         {priced && (
           <dl className="flex flex-col gap-1 tabular-nums">

@@ -51,7 +51,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
           <OrderActions
             orderId={order.id}
             receiptNumber={order.receipt_number}
-            total={order.total}
+            total={order.total + order.tip}
             context={toRefundContext(order)}
             availability={refundAvailability(order, session)}
             sessionId={session?.sessionId ?? null}
@@ -68,6 +68,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
               <StatusTag status={order.status} />
               <span className="text-soft">
                 {when(order.created_at)} · {order.register?.name ?? "—"} · {order.staff?.name ?? "—"}
+                {order.order_name ? ` · for ${order.order_name}` : ""}
               </span>
             </div>
             <div className="flex flex-wrap gap-8">
@@ -110,7 +111,15 @@ export default async function OrderPage({ params }: OrderPageProps) {
               <TableBody>
                 {items.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell>{item.name}<span className="caption-style text-subtle mt-1 block">{item.sku}</span></TableCell>
+                    <TableCell>
+                      {item.name}
+                      {item.order_item_modifiers.length > 0 && (
+                        <span className="caption-style text-soft mt-1 block">
+                          {[...item.order_item_modifiers].sort((a, b) => a.sort_order - b.sort_order).map((modifier) => modifier.option_name).join(" · ")}
+                        </span>
+                      )}
+                      <span className="caption-style text-subtle mt-1 block">{item.sku}</span>
+                    </TableCell>
                     <TableCell className="text-right tabular-nums">{item.quantity} × {money(item.unit_price)}</TableCell>
                     <TableCell className="text-right tabular-nums">{refunded.get(item.id) ?? 0}</TableCell>
                     <TableCell className="text-right tabular-nums">{item.discount > 0 ? `−${money(item.discount)}` : "—"}</TableCell>
@@ -130,6 +139,12 @@ export default async function OrderPage({ params }: OrderPageProps) {
               )}
               <div className="flex justify-between"><dt className="text-soft">Tax</dt><dd>{money(order.tax_total)}</dd></div>
               <div className="flex justify-between border-t border-white/8 pt-2 font-semibold"><dt>Total</dt><dd>{money(order.total)}</dd></div>
+              {order.tip > 0 && (
+                <>
+                  <div className="flex justify-between"><dt className="text-soft">Tip</dt><dd>{money(order.tip)}</dd></div>
+                  <div className="flex justify-between font-semibold"><dt>Paid</dt><dd>{money(order.total + order.tip)}</dd></div>
+                </>
+              )}
             </dl>
           </DetailSection>
 

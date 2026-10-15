@@ -17,6 +17,8 @@ import CustomerDialog from "./customer-dialog";
 import CloseTillDialog from "./close-till-dialog";
 import ChangeRegisterButton from "./change-register-button";
 import SaleDone from "./sale-done";
+import ModifierDialog, { type ModifierTarget } from "./modifier-dialog";
+import { selectionFromIds, type Selection } from "@/lib/modifiers";
 import ReturnDialog from "./return-dialog";
 import VoidDialog from "@/components/refunds/void-dialog";
 import { useOnline } from "@/hooks/use-online";
@@ -26,6 +28,7 @@ import { completeSale } from "@/lib/register/actions";
 import {
   addToCart,
   cartInputs,
+  changeSelection,
   discountInput,
   findByCode,
   searchProducts,
@@ -52,7 +55,7 @@ type RegisterScreenProps = {
 };
 
 type DiscountTarget = { kind: "line"; line: CartLine } | { kind: "order" } | null;
-type Done = { orderId: string; receiptNumber: number; change: number; total: number };
+type Done = { orderId: string; receiptNumber: number; change: number; total: number; tip: number; kitchen: boolean };
 
 export default function RegisterScreen(props: RegisterScreenProps) {
   const online = useOnline();
@@ -72,6 +75,8 @@ export default function RegisterScreen(props: RegisterScreenProps) {
   const [approvalOpen, setApprovalOpen] = useState(false);
   const [customerOpen, setCustomerOpen] = useState(false);
   const [done, setDone] = useState<Done | null>(null);
+  const [modifierTarget, setModifierTarget] = useState<ModifierTarget | null>(null);
+  const [orderName, setOrderName] = useState("");
   const [voidOpen, setVoidOpen] = useState(false);
   const [lastOrderId, setLastOrderId] = useState(props.lastOrderId);
 
@@ -92,11 +97,24 @@ export default function RegisterScreen(props: RegisterScreenProps) {
   const needsApproval = overLimit && !approved;
   const canPay = lines.length > 0 && pricing.priced !== null && !needsApproval && online;
 
-  function add(product: RegisterProduct, variant: RegisterVariant) {
-    setLines((current) => addToCart(current, product, variant));
+  function add(product: RegisterProduct, variant: RegisterVariant, selection: Selection = {}) {
+    setLines((current) => addToCart(current, product, variant, selection));
     setNotice(null);
     searchRef.current?.focus();
   }
+
+  function choose(product: RegisterProduct, variant: RegisterVariant) {
+    if (product.modifierGroups.length > 0) setModifierTarget({ product, variant, selection: {}, editKey: null });
+    else add(product, variant);
+  }
+
+  function editChoices(line: CartLine) {
+    const product = props.products.find((entry) => entry.variants.some((variant) => variant.id === line.variantId));
+    const variant = product?.variants.find((entry) => entry.id === line.variantId);
+    if (!product || !variant) return;
+    setModifierTarget({ product, variant, selection: selectionFromIds(product.modifierGroups, line.optionIds), editKey: line.key });
+  }
+
 
   function refocusSearch(event: Event) {
     event.preventDefault();
@@ -104,7 +122,7 @@ export default function RegisterScreen(props: RegisterScreenProps) {
   }
 
   function pick(product: RegisterProduct) {
-    if (product.variants.length === 1) add(product, product.variants[0]);
+    if (product.variants.length === 1) choose(product, product.variants[0]);
     else setVariantProduct(product);
   }
 
@@ -113,10 +131,10 @@ export default function RegisterScreen(props: RegisterScreenProps) {
     event.preventDefault();
     const match = findByCode(props.products, query);
     if (match) {
-      add(match.product, match.variant);
+      choose(match.product, match.variant);
       setQuery("");
     } else if (visible.length === 1 && visible[0].variants.length === 1) {
-      add(visible[0], visible[0].variants[0]);
+      choose(visible[0], visible[0].variants[0]);
       setQuery("");
     } else if (visible.length === 0) {
       setNotice(`Nothing matches "${query}".`);
@@ -130,16 +148,19 @@ export default function RegisterScreen(props: RegisterScreenProps) {
     setApproval(null);
     setQuery("");
     setNotice(null);
+    setOrderName("");
   }
 
-  async function complete(payments: PaymentInput[]): Promise<string | null> {
+  async function complete(payments: PaymentInput[], tip: number): Promise<string | null> {
     const result = await completeSale({
       sessionId: props.sessionId,
-      lines: lines.map((line) => ({ variantId: line.variantId, quantity: line.quantity, discountBps: line.discountBps, discountAmount: line.discountAmount })),
+      lines: lines.map((line) => ({ variantId: line.variantId, quantity: line.quantity, discountBps: line.discountBps, discountAmount: line.discountAmount, optionIds: line.optionIds })),
       orderDiscount: discountInput(orderDiscount),
       approvalId: approved && approval ? approval.id : null,
       customerId: customer?.id ?? null,
       payments,
+      tip,
+      orderName: orderName.trim() || undefined,
     });
     if (!result.ok) {
       if (result.kind === "approval") {
@@ -151,7 +172,7 @@ export default function RegisterScreen(props: RegisterScreenProps) {
       return result.error;
     }
     setPayOpen(false);
-    setDone({ orderId: result.orderId, receiptNumber: result.receiptNumber, change: result.change, total: result.total });
+    setDone({ orderId: result.orderId, receiptNumber: result.receiptNumber, change: result.change, total: result.total, tip, kitchen: lines.some((line) => line.kitchen) });
     setLastOrderId(result.orderId);
     reset();
     return null;
@@ -175,7 +196,7 @@ export default function RegisterScreen(props: RegisterScreenProps) {
         }
       />
       {done ? (
-        <SaleDone orderId={done.orderId} receiptNumber={done.receiptNumber} total={done.total} change={done.change} money={money} onNewSale={() => setDone(null)} onVoid={() => setVoidOpen(true)} />
+        <SaleDone orderId={done.orderId} receiptNumber={done.receiptNumber} total={done.total} tip={done.tip} kitchen={done.kitchen} change={done.change} money={money} onNewSale={() => setDone(null)} onVoid={() => setVoidOpen(true)} />
       ) : (
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -223,7 +244,11 @@ export default function RegisterScreen(props: RegisterScreenProps) {
               approved={approved}
               canPay={canPay}
               money={money}
-              onQuantity={(variantId, quantity) => setLines((current) => setQuantity(current, variantId, quantity))}
+              onQuantity={(key, quantity) => setLines((current) => setQuantity(current, key, quantity))}
+              orderName={orderName}
+              onOrderName={setOrderName}
+              canEdit={(line) => props.products.some((product) => product.modifierGroups.length > 0 && product.variants.some((variant) => variant.id === line.variantId))}
+              onEditChoices={editChoices}
               onLineDiscount={(line) => setDiscountTarget({ kind: "line", line })}
               onOrderDiscount={() => setDiscountTarget({ kind: "order" })}
               onCustomer={() => setCustomerOpen(true)}
@@ -239,11 +264,25 @@ export default function RegisterScreen(props: RegisterScreenProps) {
         product={variantProduct}
         money={money}
         onPick={(product, variant) => {
-          add(product, variant);
           setVariantProduct(null);
+          choose(product, variant);
         }}
         onClose={() => setVariantProduct(null)}
         onCloseAutoFocus={refocusSearch}
+      />
+      <ModifierDialog
+        target={modifierTarget}
+        money={money}
+        onClose={() => setModifierTarget(null)}
+        onDone={(target, selection) => {
+          if (target.editKey) {
+            const key = target.editKey;
+            setLines((current) => changeSelection(current, key, target.product, selection));
+          } else {
+            add(target.product, target.variant, selection);
+          }
+          setModifierTarget(null);
+        }}
       />
       <DiscountDialog
         open={discountTarget !== null}
@@ -260,7 +299,7 @@ export default function RegisterScreen(props: RegisterScreenProps) {
         }
         currency={props.currency}
         onApply={(discount) => {
-          if (discountTarget?.kind === "line") setLines((current) => setLineDiscount(current, discountTarget.line.variantId, discount));
+          if (discountTarget?.kind === "line") setLines((current) => setLineDiscount(current, discountTarget.line.key, discount));
           else setOrderDiscount(discount);
           setDiscountTarget(null);
         }}
@@ -291,7 +330,7 @@ export default function RegisterScreen(props: RegisterScreenProps) {
           onOpenChange={setVoidOpen}
           orderId={done.orderId}
           receiptNumber={done.receiptNumber}
-          total={done.total}
+          total={done.total + done.tip}
           money={money}
           onVoided={() => {
             setVoidOpen(false);

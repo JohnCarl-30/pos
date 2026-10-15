@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addToCart, cartInputs, discountInput, findByCode, isOverStock, searchProducts, setLineDiscount, setQuantity, toRegisterCatalog, type RegisterCatalogRow } from "./cart";
+import { addToCart, cartInputs, changeSelection, discountInput, findByCode, isOverStock, searchProducts, setLineDiscount, setQuantity, toRegisterCatalog, type RegisterCatalogRow, type RegisterProduct } from "./cart";
 
 const rows: RegisterCatalogRow[] = [
   {
@@ -46,7 +46,12 @@ describe("cart lines", () => {
   it("adds, increments and labels lines", () => {
     let lines = addToCart([], latte, latte.variants[0]);
     lines = addToCart(lines, latte, latte.variants[0]);
-    expect(lines).toEqual([{ variantId: "v1", label: "Latte – Small", sku: "LAT-S", price: 420, rateBps: 825, track: true, stock: 0, quantity: 2, discountBps: null, discountAmount: null }]);
+    expect(lines).toEqual([
+      {
+        key: "v1", variantId: "v1", label: "Latte – Small", sku: "LAT-S", basePrice: 420, price: 420, optionIds: [], modifierLabel: "", kitchen: false,
+        rateBps: 825, track: true, stock: 0, quantity: 2, discountBps: null, discountAmount: null,
+      },
+    ]);
     expect(isOverStock(lines[0])).toBe(true);
   });
   it("changes quantity, removes at zero and sets discounts", () => {
@@ -62,5 +67,55 @@ describe("cart lines", () => {
     expect(discountInput({ bps: 500 })).toEqual({ bps: 500 });
     expect(discountInput({ amount: 25 })).toEqual({ amount: 25 });
     expect(discountInput(null)).toBeNull();
+  });
+});
+
+describe("modifiers in the cart", () => {
+  const latte: RegisterProduct = {
+    id: "p1",
+    name: "Latte",
+    categoryId: "c1",
+    kitchen: true,
+    modifierGroups: [{ id: "g1", name: "Milk", min: 1, max: 1, options: [{ id: "o1", name: "Whole", priceDelta: 0 }, { id: "o2", name: "Oat", priceDelta: 50 }] }],
+    variants: [{ id: "v1", name: "Small", sku: "LAT-S", barcode: null, price: 420, rateBps: 825, track: false, quantity: 0 }],
+  };
+  it("prices and keys lines by their choices", () => {
+    let lines = addToCart([], latte, latte.variants[0], { g1: ["o2"] });
+    lines = addToCart(lines, latte, latte.variants[0], { g1: ["o2"] });
+    lines = addToCart(lines, latte, latte.variants[0], { g1: ["o1"] });
+    expect(lines.map((line) => [line.key, line.price, line.modifierLabel, line.quantity, line.kitchen])).toEqual([
+      ["v1|o2", 470, "Oat", 2, true],
+      ["v1|o1", 420, "Whole", 1, true],
+    ]);
+    expect(cartInputs(lines)[0].price).toBe(470);
+  });
+  it("merges a line into a matching one when its choices change", () => {
+    let lines = addToCart([], latte, latte.variants[0], { g1: ["o2"] });
+    lines = addToCart(lines, latte, latte.variants[0], { g1: ["o1"] });
+    lines = changeSelection(lines, "v1|o1", latte, { g1: ["o2"] });
+    expect(lines.map((line) => [line.key, line.quantity])).toEqual([["v1|o2", 2]]);
+  });
+  it("reads groups and the kitchen flag from the catalog", () => {
+    const [product] = toRegisterCatalog(
+      [
+        {
+          id: "p1", name: "Latte", active: true, category_id: "c1", tax_class_id: "t1",
+          product_variants: [{ id: "v1", name: "Small", sku: "LAT-S", barcode: null, price: 420, active: true, sort_order: 0, stock_levels: [] }],
+          product_modifier_groups: [
+            { sort_order: 1, group: { id: "g2", name: "Old", min_choices: 1, max_choices: 1, active: false, modifier_options: [] } },
+            { sort_order: 0, group: { id: "g1", name: "Milk", min_choices: 1, max_choices: 1, active: true, modifier_options: [
+              { id: "o2", name: "Oat", price_delta: 50, active: true, sort_order: 1 },
+              { id: "o1", name: "Whole", price_delta: 0, active: true, sort_order: 0 },
+              { id: "o3", name: "Cream", price_delta: 60, active: false, sort_order: 2 },
+            ] } },
+          ],
+        },
+      ],
+      "s1",
+      [],
+      new Set(["c1"]),
+    );
+    expect(product.kitchen).toBe(true);
+    expect(product.modifierGroups).toEqual([{ id: "g1", name: "Milk", min: 1, max: 1, options: [{ id: "o1", name: "Whole", priceDelta: 0 }, { id: "o2", name: "Oat", priceDelta: 50 }] }]);
   });
 });

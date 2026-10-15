@@ -7,6 +7,7 @@ export type ProductFormInput = {
   taxClassId: string;
   description: string;
   active: boolean;
+  modifierGroupIds?: string[];
   variants: {
     id?: string;
     name: string;
@@ -26,6 +27,7 @@ export type SaveProductPayload = {
   tax_class_id: string;
   description: string | null;
   active: boolean;
+  modifier_group_ids?: string[];
 };
 
 export type SaveVariantPayload = {
@@ -99,6 +101,7 @@ export function parseProductForm(input: ProductFormInput, currency: string): Par
       tax_class_id: input.taxClassId,
       description: input.description.trim() || null,
       active: input.active,
+      ...(input.modifierGroupIds ? { modifier_group_ids: input.modifierGroupIds.filter((id) => GUID.test(id)) } : {}),
     },
     variants,
   };

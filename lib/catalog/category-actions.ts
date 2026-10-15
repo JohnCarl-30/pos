@@ -61,3 +61,15 @@ export async function deleteCategory(_: ActionResult, formData: FormData): Promi
   revalidatePath("/products", "layout");
   return { ok: true, message: "Category removed. Its products are now uncategorised." };
 }
+
+export async function setCategoryKitchen(id: string, kitchen: boolean): Promise<ActionResult> {
+  await requireRole("manager");
+  if (!z.guid().safeParse(id).success) return { ok: false, error: GONE };
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("categories").update({ kitchen }).eq("id", id).select("id");
+  if (error) return { ok: false, error: catalogDbError(error) };
+  if (!data || data.length === 0) return { ok: false, error: GONE };
+  revalidatePath("/products", "layout");
+  revalidatePath("/register");
+  return { ok: true };
+}

@@ -7,7 +7,7 @@ truncate table public.business, public.stores, public.staff, public.tax_classes,
 
 select tables_are('public', array[
   'business', 'stores', 'registers', 'staff', 'staff_stores', 'tax_classes', 'tax_rates',
-  'categories', 'products', 'product_variants', 'stock_levels', 'stock_movements', 'customers', 'discount_approvals', 'refunds', 'refund_items', 'refund_payments', 'refund_approvals',
+  'categories', 'products', 'product_variants', 'stock_levels', 'stock_movements', 'customers', 'discount_approvals', 'refunds', 'refund_items', 'refund_payments', 'refund_approvals', 'modifier_groups', 'modifier_options', 'product_modifier_groups', 'order_item_modifiers',
   'register_sessions', 'orders', 'order_items', 'payments'
 ], 'public has exactly the foundation tables');
 

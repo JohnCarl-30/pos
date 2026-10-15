@@ -32,6 +32,7 @@ export default function CashupsView({ rows, onlyOff, toggleHref, timeZone, money
                 <TableHead className="hidden md:table-cell">Closed by</TableHead>
                 <TableHead className="hidden text-right md:table-cell">Float</TableHead>
                 <TableHead className="hidden text-right md:table-cell">Cash sales</TableHead>
+                <TableHead className="hidden text-right md:table-cell">Cash tips</TableHead>
                 <TableHead className="hidden text-right md:table-cell">Cash refunds</TableHead>
                 <TableHead className="text-right">Expected</TableHead>
                 <TableHead className="text-right">Counted</TableHead>
@@ -51,6 +52,7 @@ export default function CashupsView({ rows, onlyOff, toggleHref, timeZone, money
                     <TableCell className="hidden md:table-cell">{row.closed_by ?? "—"}</TableCell>
                     <TableCell className="hidden text-right tabular-nums md:table-cell">{money(row.opening_cash)}</TableCell>
                     <TableCell className="hidden text-right tabular-nums md:table-cell">{money(row.cash_sales)}</TableCell>
+                    <TableCell className="hidden text-right tabular-nums md:table-cell">{money(row.cash_tips)}</TableCell>
                     <TableCell className="hidden text-right tabular-nums md:table-cell">{row.cash_refunds > 0 ? `−${money(row.cash_refunds)}` : money(0)}</TableCell>
                     <TableCell className="text-right tabular-nums">{money(row.expected_cash)}</TableCell>
                     <TableCell className="text-right tabular-nums">{row.counted_cash === null ? "—" : money(row.counted_cash)}</TableCell>
