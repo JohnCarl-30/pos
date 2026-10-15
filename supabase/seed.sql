@@ -127,3 +127,5 @@ insert into public.customers (name, email, phone) values
   ('Hiro Tanaka', 'hiro@example.com', null),
   ('Isla Brown', 'isla@example.com', '+1 555 0109'),
   ('Jonas Weber', null, null);
+
+update public.categories set kitchen = true where name in ('Coffee', 'Bakery');

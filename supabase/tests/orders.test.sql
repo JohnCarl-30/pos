@@ -185,7 +185,7 @@ select throws_ok($$select public.void_order('00000000-0000-0000-0000-00000000002
 select throws_ok($$select public.void_order('00000000-0000-0000-0000-000000000021', '   ')$$, '22023', 'add a reason for the void', 'a void needs a reason');
 select is(
   public.close_register('00000000-0000-0000-0000-000000000011', 5000) - 'counted_cash',
-  '{"opening_cash":5000,"cash_sales":490,"cash_refunds":490,"expected_cash":5000,"difference":0,"voided_count":2}'::jsonb,
+  '{"opening_cash":5000,"cash_sales":490,"cash_tips":0,"cash_refunds":490,"expected_cash":5000,"difference":0,"voided_count":2}'::jsonb,
   'expected cash leaves out voided sales and takes off cash refunds'
 );
 select throws_ok(
