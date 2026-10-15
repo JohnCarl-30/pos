@@ -24,5 +24,5 @@ export async function loadExportRows(supabase: Client): Promise<ExportQueryRow[]
 }
 
 export async function loadCategories(supabase: Client) {
-  return fetchAll((from, to) => supabase.from("categories").select("id, name, sort_order").order("sort_order").order("name").order("id").range(from, to));
+  return fetchAll((from, to) => supabase.from("categories").select("id, name, sort_order, kitchen").order("sort_order").order("name").order("id").range(from, to));
 }

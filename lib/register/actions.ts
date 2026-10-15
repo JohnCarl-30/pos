@@ -88,6 +88,7 @@ export async function completeSale(
       quantity: line.quantity,
       discount_bps: line.discountBps ?? null,
       discount_amount: line.discountAmount ?? null,
+      option_ids: line.optionIds ?? [],
     })),
     p_order_discount: sale.orderDiscount ? { bps: sale.orderDiscount.bps ?? null, amount: sale.orderDiscount.amount ?? null } : undefined,
     p_approval_id: sale.approvalId ?? undefined,
@@ -98,6 +99,8 @@ export async function completeSale(
       tendered: payment.tendered ?? null,
       reference: payment.reference ?? null,
     })),
+    p_tip: sale.tip ?? 0,
+    p_order_name: sale.orderName || undefined,
   });
   if (error || !data) return { ok: false, error: registerDbError(error), kind: registerErrorKind(error) };
   const result = data as { order_id: string; receipt_number: number; total: number; change: number };

@@ -21,6 +21,7 @@ export const productFormInputSchema = z.object({
   description: z.string().max(2000),
   active: z.boolean(),
   variants: z.array(variantInput).max(100),
+  modifierGroupIds: z.array(z.string().max(100)).max(50).optional(),
 });
 
 type ProductRecord = { id: string; name: string; description: string | null; active: boolean; category_id: string | null; tax_class_id: string };
