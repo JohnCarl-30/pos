@@ -92,3 +92,8 @@ export function summarisePayments(total: number, payments: PaymentInput[]): Paym
   if (paid > total) error ??= "Payments add up to more than the total";
   return { paid, remaining: Math.max(0, total - paid), change, complete: error === null && paid === total, error };
 }
+
+export function splitEvenly(due: number, people: number): number[] {
+  if (!Number.isInteger(people) || people < 1 || people > 20) throw new CartError("Split between 1 and 20 people");
+  return allocate(due, Array.from({ length: people }, () => 1));
+}
