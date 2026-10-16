@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RegisterProduct } from "@/lib/register/cart";
-import { leftToPay, lineChoices, lineUnitPrice, partsFrom, pickAll, setPick, tabCartLines, tabLabel, tabTotal, toTabLine, unsentCount, type TabLine } from "./lines";
+import { clampPick, leftToPay, lineChoices, lineUnitPrice, partsFrom, pickAll, setPick, tabCartLines, tabLabel, tabTotal, toTabLine, unsentCount, type TabLine } from "./lines";
 
 const latte: RegisterProduct = {
   id: "p-latte",
@@ -85,5 +85,12 @@ describe("showing a tab line", () => {
   });
   it("counts unsent lines", () => {
     expect(unsentCount([line({ sentAt: null, quantity: 2 }), line({ sentAt: null, quantity: 1 }), line({})])).toBe(3);
+  });
+});
+
+describe("clampPick", () => {
+  it("drops what was paid since the pick was made", () => {
+    const lines = [line({ id: "a", quantity: 3, paidQuantity: 2 }), line({ id: "b", voidedAt: "x", voidReason: "spilled" })];
+    expect(clampPick({ a: 3, b: 1, gone: 2 }, lines)).toEqual({ a: 1 });
   });
 });

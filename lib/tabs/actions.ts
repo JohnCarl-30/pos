@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCurrentStore, requireStaff } from "@/lib/auth/staff";
 import { createClient } from "@/lib/supabase/server";
-import { noteSchema, openTabSchema, reasonSchema } from "./schemas";
+import { noteSchema, openTabSchema, payTabSchema, reasonSchema, type PayTabInput } from "./schemas";
+import { registerErrorKind, type RegisterErrorKind } from "@/lib/register/errors";
 import { tabDbError } from "./errors";
 
 export async function openTab(input: { tableId: string | null; name: string; guests: string }): Promise<{ ok: true; tabId: string } | { ok: false; error: string }> {
@@ -98,4 +99,35 @@ export async function updateTab(tabId: string, name: string, guests: string): Pr
 export async function cancelTab(tabId: string): Promise<TabActionResult> {
   if (!id.safeParse(tabId).success) return { ok: false, error: "This tab no longer exists." };
   return call(tabId, (supabase) => supabase.rpc("cancel_tab", { p_tab_id: tabId }));
+}
+
+export async function payTab(
+  input: PayTabInput,
+): Promise<{ ok: true; orderId: string; receiptNumber: number; total: number; change: number; tabPaid: boolean } | { ok: false; error: string; kind?: RegisterErrorKind | null }> {
+  await requireStaff();
+  const parsed = payTabSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Something in the payment isn't valid. Check it and try again." };
+  const sale = parsed.data;
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("pay_tab", {
+    p_tab_id: sale.tabId,
+    p_session_id: sale.sessionId,
+    p_parts: sale.parts.map((part) => ({
+      tab_item_id: part.tabItemId,
+      quantity: part.quantity,
+      discount_bps: part.discountBps ?? null,
+      discount_amount: part.discountAmount ?? null,
+    })),
+    p_order_discount: sale.orderDiscount ? { bps: sale.orderDiscount.bps ?? null, amount: sale.orderDiscount.amount ?? null } : undefined,
+    p_approval_id: sale.approvalId ?? undefined,
+    p_customer_id: sale.customerId ?? undefined,
+    p_payments: sale.payments.map((payment) => ({ method: payment.method, amount: payment.amount, tendered: payment.tendered ?? null, reference: payment.reference ?? null })),
+    p_tip: sale.tip ?? 0,
+  });
+  if (error || !data) return { ok: false, error: tabDbError(error), kind: registerErrorKind(error) };
+  const result = data as { order_id: string; receipt_number: number; total: number; change: number; tab_paid: boolean };
+  revalidatePath("/register");
+  revalidatePath("/tables");
+  revalidatePath(`/tabs/${sale.tabId}`);
+  return { ok: true, orderId: result.order_id, receiptNumber: result.receipt_number, total: result.total, change: result.change, tabPaid: result.tab_paid };
 }

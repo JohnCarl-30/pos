@@ -18,6 +18,7 @@ type SaleDoneProps = {
   money: (minor: number) => string;
   onNewSale: () => void;
   onVoid: () => void;
+  tab?: { paid: boolean } | null;
 };
 
 function readAuto(): boolean {
@@ -28,7 +29,7 @@ function readAuto(): boolean {
   }
 }
 
-export default function SaleDone({ orderId, receiptNumber, total, tip, change, kitchen, money, onNewSale, onVoid }: SaleDoneProps) {
+export default function SaleDone({ orderId, receiptNumber, total, tip, change, kitchen, money, onNewSale, onVoid, tab }: SaleDoneProps) {
   const [auto, setAuto] = useState(readAuto);
   const kitchenHref = `/receipts/${orderId}/kitchen?print=1`;
 
@@ -43,7 +44,7 @@ export default function SaleDone({ orderId, receiptNumber, total, tip, change, k
     <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center">
       <Card className="flex w-full max-w-[24em] flex-col items-center gap-5 p-6">
         <div className="flex flex-col items-center gap-2">
-          <h2>Sale complete</h2>
+          <h2>{tab?.paid ? "Tab paid" : "Sale complete"}</h2>
           <span className="caption-style text-soft">Receipt #{receiptNumber}</span>
         </div>
         <div className="flex flex-col items-center gap-1.5">
@@ -55,9 +56,15 @@ export default function SaleDone({ orderId, receiptNumber, total, tip, change, k
           <a href={`/receipts/${orderId}?print=1`} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "secondary", size: "md" }), "min-h-11 flex-1")}>
             Print receipt
           </a>
-          <Button variant="primary" size="md" className="min-h-11 flex-1" onClick={onNewSale} autoFocus>
-            New sale
-          </Button>
+          {tab?.paid ? (
+            <Button href="/tables" variant="primary" size="md" className="min-h-11 flex-1" autoFocus>
+              Back to tables
+            </Button>
+          ) : (
+            <Button variant="primary" size="md" className="min-h-11 flex-1" onClick={onNewSale} autoFocus>
+              {tab ? "Pay the rest" : "New sale"}
+            </Button>
+          )}
         </div>
         {kitchen && (
           <div className="flex w-full flex-col items-center gap-2">

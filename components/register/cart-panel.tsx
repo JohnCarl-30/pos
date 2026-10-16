@@ -20,6 +20,7 @@ type CartPanelProps = {
   money: (minor: number) => string;
   onQuantity: (key: string, quantity: number) => void;
   orderName: string;
+  showOrderName?: boolean;
   onOrderName: (value: string) => void;
   canEdit: (line: CartLine) => boolean;
   onEditChoices: (line: CartLine) => void;
@@ -90,7 +91,9 @@ export default function CartPanel(props: CartPanelProps) {
             <Button variant="secondary" size="md" className="min-h-11 flex-1" onClick={props.onCustomer}>+ Customer</Button>
           )}
         </div>
-        <Input aria-label="Name for the order" placeholder="Name for the order (optional)" className="min-h-11" maxLength={40} value={props.orderName} onChange={(event) => props.onOrderName(event.target.value)} />
+        {props.showOrderName !== false && (
+          <Input aria-label="Name for the order" placeholder="Name for the order (optional)" className="min-h-11" maxLength={40} value={props.orderName} onChange={(event) => props.onOrderName(event.target.value)} />
+        )}
         {props.error && <span role="alert" className="caption-style text-danger">{props.error}</span>}
         {priced && (
           <dl className="flex flex-col gap-1.5 tabular-nums">

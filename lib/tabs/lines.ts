@@ -134,3 +134,12 @@ export function lineUnitPrice(line: TabLine, products: RegisterProduct[]): numbe
 export function unsentCount(lines: TabLine[]): number {
   return lines.filter((line) => line.sentAt === null).reduce((sum, line) => sum + line.quantity, 0);
 }
+
+export function clampPick(pick: PayPick, lines: TabLine[]): PayPick {
+  const next: PayPick = {};
+  for (const line of lines) {
+    const quantity = Math.min(pick[line.id] ?? 0, leftToPay(line));
+    if (quantity > 0) next[line.id] = quantity;
+  }
+  return next;
+}

@@ -20,6 +20,10 @@ import SaleDone from "./sale-done";
 import ModifierDialog, { type ModifierTarget } from "./modifier-dialog";
 import { selectionFromIds, type Selection } from "@/lib/modifiers";
 import ReturnDialog from "./return-dialog";
+import TabPayPicker from "./tab-pay-picker";
+import { payTab } from "@/lib/tabs/actions";
+import { clampPick, partsFrom, pickAll, setPick, tabCartLines, type PayPick } from "@/lib/tabs/lines";
+import type { TabView } from "@/lib/tabs/queries";
 import VoidDialog from "@/components/refunds/void-dialog";
 import { useOnline } from "@/hooks/use-online";
 import { CartError, discountShareBps, priceCart, type PaymentInput } from "@/lib/checkout";
@@ -52,10 +56,11 @@ type RegisterScreenProps = {
   products: RegisterProduct[];
   categories: { id: string; name: string }[];
   lastOrderId: string | null;
+  tab: TabView | null;
 };
 
 type DiscountTarget = { kind: "line"; line: CartLine } | { kind: "order" } | null;
-type Done = { orderId: string; receiptNumber: number; change: number; total: number; tip: number; kitchen: boolean };
+type Done = { orderId: string; receiptNumber: number; change: number; total: number; tip: number; kitchen: boolean; tabPaid: boolean | null };
 
 export default function RegisterScreen(props: RegisterScreenProps) {
   const online = useOnline();
@@ -63,6 +68,11 @@ export default function RegisterScreen(props: RegisterScreenProps) {
   const searchRef = useRef<HTMLInputElement>(null);
   const money = (minor: number) => formatMoney(minor, props.currency, "en-US");
   const [lines, setLines] = useState<CartLine[]>([]);
+  const [tabPick, setPickState] = useState<PayPick>(() => (props.tab ? pickAll(props.tab.lines) : {}));
+  const [tabDiscounts, setTabDiscounts] = useState<Record<string, Discount>>({});
+  const livePick = useMemo(() => (props.tab ? clampPick(tabPick, props.tab.lines) : {}), [props.tab, tabPick]);
+  const tabCart = useMemo(() => (props.tab ? tabCartLines(props.tab.lines, props.products, livePick, tabDiscounts) : null), [props.tab, props.products, livePick, tabDiscounts]);
+  const saleLines = tabCart ? tabCart.lines : lines;
   const [orderDiscount, setOrderDiscount] = useState<Discount>(null);
   const [customer, setCustomer] = useState<{ id: string; name: string } | null>(null);
   const [approval, setApproval] = useState<{ id: string; maxBps: number; maxDiscount: number } | null>(null);
@@ -84,18 +94,18 @@ export default function RegisterScreen(props: RegisterScreenProps) {
   const visible = useMemo(() => searchProducts(props.products, query, category), [props.products, query, category]);
   const pricing = useMemo(() => {
     try {
-      return { priced: priceCart(cartInputs(lines), discountInput(orderDiscount), props.pricesIncludeTax), error: null };
+      return { priced: priceCart(cartInputs(saleLines), discountInput(orderDiscount), props.pricesIncludeTax), error: null };
     } catch (error) {
       return { priced: null, error: error instanceof CartError ? error.message : "Something in this sale isn't valid." };
     }
-  }, [lines, orderDiscount, props.pricesIncludeTax]);
+  }, [saleLines, orderDiscount, props.pricesIncludeTax]);
 
   const shareBps = pricing.priced ? discountShareBps(pricing.priced.subtotal, pricing.priced.discountTotal) : 0;
   const overLimit = props.role === "cashier" && shareBps > props.maxCashierDiscountBps;
   const discountTotal = pricing.priced?.discountTotal ?? 0;
   const approved = overLimit && approval !== null && approval.maxBps >= shareBps && approval.maxDiscount >= discountTotal;
   const needsApproval = overLimit && !approved;
-  const canPay = lines.length > 0 && pricing.priced !== null && !needsApproval && online;
+  const canPay = saleLines.length > 0 && pricing.priced !== null && !needsApproval && online;
 
   function add(product: RegisterProduct, variant: RegisterVariant, selection: Selection = {}) {
     setLines((current) => addToCart(current, product, variant, selection));
@@ -149,19 +159,40 @@ export default function RegisterScreen(props: RegisterScreenProps) {
     setQuery("");
     setNotice(null);
     setOrderName("");
+    setPickState({});
+    setTabDiscounts({});
+  }
+
+  function changeQuantity(key: string, quantity: number) {
+    if (!props.tab) {
+      setLines((current) => setQuantity(current, key, quantity));
+      return;
+    }
+    const line = props.tab.lines.find((entry) => entry.id === key);
+    if (line) setPickState((current) => setPick(clampPick(current, props.tab!.lines), line, quantity));
+  }
+
+  function changeLineDiscount(key: string, discount: Discount) {
+    if (props.tab) setTabDiscounts((current) => ({ ...current, [key]: discount }));
+    else setLines((current) => setLineDiscount(current, key, discount));
   }
 
   async function complete(payments: PaymentInput[], tip: number): Promise<string | null> {
-    const result = await completeSale({
-      sessionId: props.sessionId,
-      lines: lines.map((line) => ({ variantId: line.variantId, quantity: line.quantity, discountBps: line.discountBps, discountAmount: line.discountAmount, optionIds: line.optionIds })),
+    const common = {
       orderDiscount: discountInput(orderDiscount),
       approvalId: approved && approval ? approval.id : null,
       customerId: customer?.id ?? null,
       payments,
       tip,
-      orderName: orderName.trim() || undefined,
-    });
+    };
+    const result = props.tab
+      ? await payTab({ tabId: props.tab.id, sessionId: props.sessionId, parts: partsFrom(livePick, tabDiscounts), ...common })
+      : await completeSale({
+          sessionId: props.sessionId,
+          lines: lines.map((line) => ({ variantId: line.variantId, quantity: line.quantity, discountBps: line.discountBps, discountAmount: line.discountAmount, optionIds: line.optionIds })),
+          ...common,
+          orderName: orderName.trim() || undefined,
+        });
     if (!result.ok) {
       if (result.kind === "approval") {
         setApproval(null);
@@ -172,18 +203,24 @@ export default function RegisterScreen(props: RegisterScreenProps) {
       return result.error;
     }
     setPayOpen(false);
-    setDone({ orderId: result.orderId, receiptNumber: result.receiptNumber, change: result.change, total: result.total, tip, kitchen: lines.some((line) => line.kitchen) });
+    setDone({ orderId: result.orderId, receiptNumber: result.receiptNumber, change: result.change, total: result.total, tip, kitchen: !props.tab && saleLines.some((line) => line.kitchen), tabPaid: "tabPaid" in result ? result.tabPaid === true : null });
     setLastOrderId(result.orderId);
     reset();
+    if (props.tab) router.refresh();
     return null;
   }
 
   return (
     <section id="register" className="flex min-h-0 min-w-0 flex-1 flex-col">
       <PageHeader
-        title={`Register · ${props.registerName}`}
+        title={props.tab ? `Register · ${props.registerName} · ${props.tab.label}` : `Register · ${props.registerName}`}
         actions={
           <>
+            {props.tab && (
+              <Button href={`/tabs/${props.tab.id}`} variant="ghost" size="md" className="min-h-11">
+                Back to tab
+              </Button>
+            )}
             {lastOrderId && (
               <a href={`/receipts/${lastOrderId}?print=1`} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "ghost", size: "md" }), "min-h-11")}>
                 Reprint last receipt
@@ -196,45 +233,76 @@ export default function RegisterScreen(props: RegisterScreenProps) {
         }
       />
       {done ? (
-        <SaleDone orderId={done.orderId} receiptNumber={done.receiptNumber} total={done.total} tip={done.tip} kitchen={done.kitchen} change={done.change} money={money} onNewSale={() => setDone(null)} onVoid={() => setVoidOpen(true)} />
+        <SaleDone
+          orderId={done.orderId}
+          receiptNumber={done.receiptNumber}
+          total={done.total}
+          tip={done.tip}
+          kitchen={done.kitchen}
+          change={done.change}
+          money={money}
+          tab={props.tab ? { paid: done.tabPaid === true } : null}
+          onNewSale={() => {
+            setDone(null);
+            if (props.tab) setPickState(pickAll(props.tab.lines));
+          }}
+          onVoid={() => setVoidOpen(true)}
+        />
       ) : (
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <div className="border-line-strong flex flex-col gap-2 border-b p-3">
-              <Input
-                ref={searchRef}
-                aria-label="Search or scan a barcode"
-                placeholder="Search or scan a barcode"
-                className="min-h-11"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                onKeyDown={onSearchKey}
-                autoFocus
-              />
-              {notice && <span role="status" className="caption-style text-warning">{notice}</span>}
-              <div role="tablist" aria-label="Categories" className="flex gap-1 overflow-x-auto">
-                {[{ id: "", name: "All" }, ...props.categories].map((entry) => (
-                  <Button
-                    key={entry.id || "all"}
-                    role="tab"
-                    aria-selected={category === entry.id}
-                    variant="ghost"
-                    size="md"
-                    className="aria-selected:text-foreground min-h-11 shrink-0 aria-selected:bg-white/6"
-                    onClick={() => setCategory(entry.id)}
-                  >
-                    {entry.name}
-                  </Button>
-                ))}
-              </div>
-            </div>
+            {props.tab ? (
             <ScrollArea className="min-h-0 flex-1">
-              <ProductGrid products={visible} categoryIndex={categoryIndex} money={money} onPick={pick} />
+              <TabPayPicker
+                label={props.tab.label}
+                lines={props.tab.lines}
+                products={props.products}
+                pick={livePick}
+                missing={tabCart?.missing ?? []}
+                onPick={(line, quantity) => setPickState((current) => setPick(clampPick(current, props.tab!.lines), line, quantity))}
+                onAll={() => setPickState(pickAll(props.tab!.lines))}
+                onNone={() => setPickState({})}
+              />
             </ScrollArea>
+            ) : (
+              <>
+              <div className="border-line-strong flex flex-col gap-2 border-b p-3">
+                <Input
+                  ref={searchRef}
+                  aria-label="Search or scan a barcode"
+                  placeholder="Search or scan a barcode"
+                  className="min-h-11"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={onSearchKey}
+                  autoFocus
+                />
+                {notice && <span role="status" className="caption-style text-warning">{notice}</span>}
+                <div role="tablist" aria-label="Categories" className="flex gap-1 overflow-x-auto">
+                  {[{ id: "", name: "All" }, ...props.categories].map((entry) => (
+                    <Button
+                      key={entry.id || "all"}
+                      role="tab"
+                      aria-selected={category === entry.id}
+                      variant="ghost"
+                      size="md"
+                      className="aria-selected:text-foreground min-h-11 shrink-0 aria-selected:bg-white/6"
+                      onClick={() => setCategory(entry.id)}
+                    >
+                      {entry.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <ScrollArea className="min-h-0 flex-1">
+                <ProductGrid products={visible} categoryIndex={categoryIndex} money={money} onPick={pick} />
+              </ScrollArea>
+              </>
+            )}
           </div>
           <aside aria-label="Current sale" className="border-line-strong flex min-h-[22rem] flex-col border-t lg:w-[24rem] lg:border-t-0 lg:border-l">
             <CartPanel
-              lines={lines}
+              lines={saleLines}
               priced={pricing.priced}
               error={pricing.error}
               orderDiscount={orderDiscount}
@@ -244,10 +312,11 @@ export default function RegisterScreen(props: RegisterScreenProps) {
               approved={approved}
               canPay={canPay}
               money={money}
-              onQuantity={(key, quantity) => setLines((current) => setQuantity(current, key, quantity))}
+              onQuantity={changeQuantity}
+              showOrderName={!props.tab}
               orderName={orderName}
               onOrderName={setOrderName}
-              canEdit={(line) => props.products.some((product) => product.modifierGroups.length > 0 && product.variants.some((variant) => variant.id === line.variantId))}
+              canEdit={(line) => !props.tab && props.products.some((product) => product.modifierGroups.length > 0 && product.variants.some((variant) => variant.id === line.variantId))}
               onEditChoices={editChoices}
               onLineDiscount={(line) => setDiscountTarget({ kind: "line", line })}
               onOrderDiscount={() => setDiscountTarget({ kind: "order" })}
@@ -299,7 +368,7 @@ export default function RegisterScreen(props: RegisterScreenProps) {
         }
         currency={props.currency}
         onApply={(discount) => {
-          if (discountTarget?.kind === "line") setLines((current) => setLineDiscount(current, discountTarget.line.key, discount));
+          if (discountTarget?.kind === "line") changeLineDiscount(discountTarget.line.key, discount);
           else setOrderDiscount(discount);
           setDiscountTarget(null);
         }}

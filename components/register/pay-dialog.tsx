@@ -5,7 +5,7 @@ import Button from "@/components/_ui/button";
 import { Input } from "@/components/_ui/input";
 import { Label } from "@/components/_ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/_ui/dialog";
-import { summarisePayments, type PaymentInput, type PaymentMethod } from "@/lib/checkout";
+import { splitEvenly, summarisePayments, type PaymentInput, type PaymentMethod } from "@/lib/checkout";
 import { formatAmount, parseMoney } from "@/lib/money";
 import { TIP_PRESETS, tipFor } from "@/lib/tips";
 
@@ -30,6 +30,7 @@ function PayForm({ total, currency, offline, money, onComplete }: Omit<PayDialog
   const [pending, setPending] = useState(false);
   const [tipChoice, setTipChoice] = useState<number | "custom">(0);
   const [customTip, setCustomTip] = useState("");
+  const [people, setPeople] = useState("2");
   const customParsed = tipChoice === "custom" ? parseMoney(customTip, currency) : null;
   const tip = tipChoice === "custom" ? (customParsed !== null && customParsed >= 0 ? customParsed : 0) : tipFor(total, tipChoice);
   const due = total + tip;
@@ -54,6 +55,18 @@ function PayForm({ total, currency, offline, money, onComplete }: Omit<PayDialog
 
   function update(key: number, patch: Partial<Row>) {
     setRows((current) => current.map((row) => (row.key === key ? { ...row, ...patch } : row)));
+    setError(null);
+  }
+
+  function split(method: PaymentMethod) {
+    const count = Number(people);
+    if (!Number.isInteger(count) || count < 2 || count > 20) {
+      setError("Split between 2 and 20 people");
+      return;
+    }
+    const amounts = splitEvenly(due, count);
+    setRows(amounts.map((amount, index) => ({ key: nextKey + index, method, amount: formatAmount(amount, currency), tendered: "", reference: "" })));
+    setNextKey((key) => key + count);
     setError(null);
   }
 
@@ -102,14 +115,27 @@ function PayForm({ total, currency, offline, money, onComplete }: Omit<PayDialog
           </Button>
         ))}
       </div>
+      <div role="group" aria-label="Split evenly" className="flex flex-wrap items-center gap-2">
+        <span className="caption-style text-soft">Split evenly between</span>
+        <Input aria-label="People" inputMode="numeric" className="min-h-11 w-[4em]" value={people} onChange={(event) => setPeople(event.target.value)} />
+        <Button variant="secondary" size="md" className="min-h-11" onClick={() => split("cash")}>In cash</Button>
+        <Button variant="secondary" size="md" className="min-h-11" onClick={() => split("card")}>By card</Button>
+      </div>
       <ul className="flex flex-col gap-3">
         {rows.map((row) => (
           <li key={row.key} className="border-line-strong flex flex-col gap-2 rounded-lg border p-3">
             <div className="flex items-center justify-between gap-2">
               <span className="lead-style">{METHOD_LABELS[row.method]}</span>
-              <Button variant="ghost" size="md" className="min-h-11" onClick={() => setRows((current) => current.filter((entry) => entry.key !== row.key))}>
-                Remove
-              </Button>
+              <div className="flex gap-1">
+                {row.method !== "other" && (
+                  <Button variant="ghost" size="md" className="min-h-11" onClick={() => update(row.key, { method: row.method === "cash" ? "card" : "cash", tendered: "" })}>
+                    {row.method === "cash" ? "Make it card" : "Make it cash"}
+                  </Button>
+                )}
+                <Button variant="ghost" size="md" className="min-h-11" onClick={() => setRows((current) => current.filter((entry) => entry.key !== row.key))}>
+                  Remove
+                </Button>
+              </div>
             </div>
             <Label htmlFor={`pay-amount-${row.key}`}>{`${METHOD_LABELS[row.method]} amount`}</Label>
             <Input id={`pay-amount-${row.key}`} inputMode="decimal" className="min-h-11" value={row.amount} onChange={(event) => update(row.key, { amount: event.target.value })} />
