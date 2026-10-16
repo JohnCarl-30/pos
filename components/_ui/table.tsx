@@ -3,11 +3,13 @@ import { cn } from "@/lib/utils";
 
 function Table({ className, ...props }: ComponentProps<"table">) {
   return (
-    <table
-      data-slot="table"
-      className={cn("w-full border-collapse text-[14px] leading-none", className)}
-      {...props}
-    />
+    <div data-slot="table-container" className="w-full overflow-x-auto overscroll-x-contain">
+      <table
+        data-slot="table"
+        className={cn("w-full border-collapse text-[14px] leading-none", className)}
+        {...props}
+      />
+    </div>
   );
 }
 

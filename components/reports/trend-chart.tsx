@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { tickLabel, trendBars } from "@/lib/reports/shape";
 import type { TrendPoint } from "@/lib/reports/types";
 
@@ -9,7 +10,7 @@ export default function TrendChart({ points, kind, money }: TrendChartProps) {
   const label = (bucket: string) => `${tickLabel(bucket, kind)}${kind === "hour" ? ":00" : ""}`;
 
   return (
-    <figure className="flex flex-col gap-2">
+    <figure className="@container flex flex-col gap-2">
       <figcaption className="sr-only">Net sales by {kind}. Focus a bar to read its value.</figcaption>
       <div className="flex h-[12em] items-stretch gap-[2px]">
         {bars.map((bar) => (
@@ -39,10 +40,14 @@ export default function TrendChart({ points, kind, money }: TrendChartProps) {
           </div>
         ))}
       </div>
-      <div aria-hidden className="caption-style text-soft flex gap-[2px]">
+      <div aria-hidden className="caption-style text-soft flex h-[1lh] gap-[2px]">
         {bars.map((bar, index) => (
-          <span key={bar.bucket} className="min-w-0 flex-1 truncate text-center">
-            {index % step === 0 ? tickLabel(bar.bucket, kind) : ""}
+          <span key={bar.bucket} className="relative min-w-0 flex-1">
+            {index % step === 0 && (
+              <span className={cn("absolute whitespace-nowrap", index === 0 ? "left-0" : "left-1/2 -translate-x-1/2", index % (step * 2) !== 0 && "@max-[32em]:hidden")}>
+                {tickLabel(bar.bucket, kind)}
+              </span>
+            )}
           </span>
         ))}
       </div>
