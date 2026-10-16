@@ -13,14 +13,14 @@ export default function PageHeader({ title, actions }: PageHeaderProps) {
   const setCommandOpen = useUiStore((state) => state.setCommandOpen);
 
   return (
-    <header className="border-line-strong flex shrink-0 items-center justify-between gap-2 border-b px-4 py-[14px]">
+    <header className="border-line-strong flex shrink-0 flex-wrap items-center justify-between gap-2 border-b px-4 py-[14px]">
       <div className="flex min-w-0 items-center gap-2">
         <Button variant="secondary" size="icon" className="lg:hidden" aria-label="Open navigation" onClick={() => setSidebarOpen(true)}>
           <MenuIcon aria-hidden className="size-3.5" />
         </Button>
         <h1 className="truncate">{title}</h1>
       </div>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {actions}
         <Button variant="secondary" size="icon" aria-label="Go to page" aria-keyshortcuts="Meta+K Control+K" onClick={() => setCommandOpen(true)}>
           <SearchIcon aria-hidden className="size-3.5" />
