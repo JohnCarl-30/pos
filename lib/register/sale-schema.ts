@@ -28,7 +28,7 @@ export const saleSchema = z.object({
         reference: z.string().max(100).nullable().optional(),
       }),
     )
-    .max(10),
+    .max(20),
   tip: money.optional(),
   orderName: z.string().trim().max(40).optional(),
 });

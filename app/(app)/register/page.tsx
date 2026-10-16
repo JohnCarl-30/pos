@@ -11,10 +11,11 @@ import { createClient } from "@/lib/supabase/server";
 import { loadCategories } from "@/lib/catalog/queries";
 import { loadRegisterCatalog } from "@/lib/register/queries";
 import { REGISTER_COOKIE, pickRegister } from "@/lib/register/pick-register";
+import { loadTab } from "@/lib/tabs/queries";
 
 export const metadata: Metadata = { title: "Register" };
 
-export default async function RegisterPage() {
+export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const staff = await requireRole("cashier");
   const store = await getCurrentStore(staff);
   if (!store) {
@@ -63,6 +64,10 @@ export default async function RegisterPage() {
     supabase.from("orders").select("id").eq("session_id", session.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
 
+  const { tab: tabId } = await searchParams;
+  const loadedTab = tabId ? await loadTab(supabase, tabId) : null;
+  const tab = loadedTab && loadedTab.storeId === store.id && loadedTab.status === "open" ? loadedTab : null;
+
   return (
     <RegisterScreen
       sessionId={session.id}
@@ -74,6 +79,7 @@ export default async function RegisterPage() {
       products={products}
       categories={categories.map((entry) => ({ id: entry.id, name: entry.name }))}
       lastOrderId={lastOrder?.id ?? null}
+      tab={tab}
     />
   );
 }

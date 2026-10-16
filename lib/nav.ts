@@ -1,11 +1,13 @@
 import { roleAtLeast, type StaffRole } from "@/lib/auth/roles";
 
-export type NavKey = "register" | "products" | "orders" | "customers" | "reports" | "settings";
+export type NavKey = "register" | "tables" | "kitchen" | "products" | "orders" | "customers" | "reports" | "settings";
 
 export type NavItem = { key: NavKey; label: string; href: string; minRole: StaffRole };
 
 export const NAV_ITEMS: NavItem[] = [
   { key: "register", label: "Register", href: "/register", minRole: "cashier" },
+  { key: "tables", label: "Tables", href: "/tables", minRole: "cashier" },
+  { key: "kitchen", label: "Kitchen", href: "/kitchen", minRole: "cashier" },
   { key: "products", label: "Products", href: "/products", minRole: "manager" },
   { key: "orders", label: "Orders", href: "/orders", minRole: "cashier" },
   { key: "customers", label: "Customers", href: "/customers", minRole: "cashier" },

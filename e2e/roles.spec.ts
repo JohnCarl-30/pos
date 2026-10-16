@@ -4,13 +4,13 @@ import { navLabels, signIn } from "./helpers";
 test("owner sees every section", async ({ page }) => {
   await signIn(page, "owner@demo.test");
   await expect(page).toHaveURL(/\/register$/);
-  expect(await navLabels(page)).toEqual(["Register", "Products", "Orders", "Customers", "Reports", "Settings"]);
+  expect(await navLabels(page)).toEqual(["Register", "Tables", "Kitchen", "Products", "Orders", "Customers", "Reports", "Settings"]);
 });
 
 test("manager sees products and reports but not settings", async ({ page }) => {
   await signIn(page, "manager@demo.test");
   await expect(page).toHaveURL(/\/register$/);
-  expect(await navLabels(page)).toEqual(["Register", "Products", "Orders", "Customers", "Reports"]);
+  expect(await navLabels(page)).toEqual(["Register", "Tables", "Kitchen", "Products", "Orders", "Customers", "Reports"]);
   await page.goto("/settings/stores");
   await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
 });
@@ -18,7 +18,7 @@ test("manager sees products and reports but not settings", async ({ page }) => {
 test("cashier sees only the selling sections", async ({ page }) => {
   await signIn(page, "cashier@demo.test");
   await expect(page).toHaveURL(/\/register$/);
-  expect(await navLabels(page)).toEqual(["Register", "Orders", "Customers"]);
+  expect(await navLabels(page)).toEqual(["Register", "Tables", "Kitchen", "Orders", "Customers"]);
   for (const path of ["/products", "/reports", "/settings"]) {
     await page.goto(path);
     await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();

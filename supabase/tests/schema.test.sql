@@ -8,7 +8,8 @@ truncate table public.business, public.stores, public.staff, public.tax_classes,
 select tables_are('public', array[
   'business', 'stores', 'registers', 'staff', 'staff_stores', 'tax_classes', 'tax_rates',
   'categories', 'products', 'product_variants', 'stock_levels', 'stock_movements', 'customers', 'discount_approvals', 'refunds', 'refund_items', 'refund_payments', 'refund_approvals', 'modifier_groups', 'modifier_options', 'product_modifier_groups', 'order_item_modifiers',
-  'register_sessions', 'orders', 'order_items', 'payments'
+  'register_sessions', 'orders', 'order_items', 'payments',
+  'dining_areas', 'dining_tables', 'tabs', 'tab_items', 'kitchen_tickets', 'kitchen_ticket_items'
 ], 'public has exactly the foundation tables');
 
 select col_type_is('public', 'product_variants', 'price', 'bigint', 'variant price is bigint');

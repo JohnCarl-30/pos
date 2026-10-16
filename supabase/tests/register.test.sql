@@ -190,7 +190,7 @@ select throws_ok(
 );
 
 reset role;
-select ok(not has_function_privilege('anon', 'public.create_order(uuid, jsonb, jsonb, uuid, uuid, jsonb, bigint, text)', 'execute'), 'anonymous visitors cannot sell');
+select ok(not has_function_privilege('anon', 'public.create_order(uuid, jsonb, jsonb, uuid, uuid, jsonb, bigint, text, boolean)', 'execute'), 'anonymous visitors cannot sell');
 select is(
   (select array_agg(receipt_number order by receipt_number) from public.orders where register_id = '00000000-0000-0000-0000-0000000000d1'),
   array[1, 2, 3],

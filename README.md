@@ -67,6 +67,13 @@ Refunds count on the day they happen, and voided sales never count, so a day's r
 - **Tips:** add No tip, 10%, 15%, 20% or a custom amount when taking payment. Tips are never taxed, discounted or counted as sales. Cash tips count in the drawer, and reports show tips separately.
 - **Kitchen tickets:** tick "Kitchen" on categories that the kitchen makes. After a sale, **Print kitchen ticket** prints an 80mm ticket with the order number, an optional name and each item's choices, without prices. Turn on **Auto-print kitchen tickets** to print one after every kitchen sale on that device. For no print dialog at all, run the browser in kiosk printing mode (for example Chrome's `--kiosk-printing`).
 
+## Restaurants & bars
+
+- **Tables:** managers add areas (Inside, Patio) and tables under **Tables → Set up tables**. Servers see a grid of tables on their phone: free, open with the running total and time seated, or waiting with the bill printed.
+- **Tabs:** tap a table, enter the guests, and add items. Notes like "no onions" go to the kitchen. **Send** sends everything new as one ticket; sent items are locked, and taking one off needs a void with a reason, which the kitchen sees. Bar tabs work the same with a name instead of a table.
+- **Kitchen screen:** open **Kitchen** on a tablet. Tickets from tabs and from counter sales with kitchen items appear live, oldest first, with a timer that turns amber at 10 minutes and red at 20. **Done** clears a ticket; **Recall** brings back the last one.
+- **Paying:** **Pay** opens the till with the tab's items. Pay everything, pick items for each guest, or use **Split evenly** in the payment step. Each payment is an ordinary sale with its own receipt, so refunds, reports and the cash drawer work as before.
+
 ## Scripts
 
 | Script | What it does |

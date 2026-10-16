@@ -1,5 +1,5 @@
 import type { CartLineInput, OrderDiscountInput } from "@/lib/checkout";
-import { selectionDelta, selectionIds, selectionKey, selectionLabel, type ModifierGroup, type Selection } from "@/lib/modifiers";
+import { selectionDelta, selectionFromIds, selectionIds, selectionKey, selectionLabel, type ModifierGroup, type Selection } from "@/lib/modifiers";
 
 export type RegisterVariant = { id: string; name: string; sku: string; barcode: string | null; price: number; rateBps: number; track: boolean; quantity: number };
 export type RegisterProduct = { id: string; name: string; categoryId: string | null; kitchen: boolean; modifierGroups: ModifierGroup[]; variants: RegisterVariant[] };
@@ -144,6 +144,10 @@ function buildLine(product: RegisterProduct, variant: RegisterVariant, selection
     discountBps,
     discountAmount,
   };
+}
+
+export function cartLineFor(product: RegisterProduct, variant: RegisterVariant, optionIds: string[], quantity: number, key: string): CartLine {
+  return { ...buildLine(product, variant, selectionFromIds(product.modifierGroups, optionIds), quantity, null, null), key };
 }
 
 export function addToCart(lines: CartLine[], product: RegisterProduct, variant: RegisterVariant, selection: Selection = {}): CartLine[] {

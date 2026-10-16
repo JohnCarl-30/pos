@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import vectors from "./checkout-vectors.json";
-import { CartError, allocate, discountShareBps, priceCart, summarisePayments, type CheckoutVector } from "./checkout";
+import { CartError, allocate, discountShareBps, priceCart, summarisePayments, type CheckoutVector, splitEvenly } from "./checkout";
 
 describe("priceCart", () => {
   for (const vector of vectors as CheckoutVector[]) {
@@ -52,5 +52,17 @@ describe("summarisePayments", () => {
     expect(summarisePayments(100, [{ method: "cash", amount: 100, tendered: 50 }]).error).toBe("Cash received can't be less than the amount");
     expect(summarisePayments(100, [{ method: "card", amount: 150 }]).error).toBe("Payments add up to more than the total");
     expect(summarisePayments(100, [{ method: "card", amount: 0 }]).error).toBe("Each payment needs an amount above 0");
+  });
+});
+
+describe("splitEvenly", () => {
+  it("adds up exactly with extra cents first", () => {
+    expect(splitEvenly(1001, 3)).toEqual([334, 334, 333]);
+    expect(splitEvenly(1000, 2)).toEqual([500, 500]);
+    expect(splitEvenly(2, 3)).toEqual([1, 1, 0]);
+  });
+  it("refuses fewer than 1 or more than 20 people", () => {
+    expect(() => splitEvenly(100, 0)).toThrow(CartError);
+    expect(() => splitEvenly(100, 21)).toThrow(CartError);
   });
 });

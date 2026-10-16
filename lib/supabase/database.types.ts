@@ -112,6 +112,91 @@ export type Database = {
         };
         Relationships: [];
       };
+      dining_areas: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          id: string;
+          name: string;
+          sort_order: number;
+          store_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          id?: string;
+          name: string;
+          sort_order?: number;
+          store_id: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          sort_order?: number;
+          store_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "dining_areas_store_id_fkey";
+            columns: ["store_id"];
+            isOneToOne: false;
+            referencedRelation: "stores";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      dining_tables: {
+        Row: {
+          active: boolean;
+          area_id: string;
+          created_at: string;
+          id: string;
+          name: string;
+          seats: number;
+          sort_order: number;
+          store_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          active?: boolean;
+          area_id: string;
+          created_at?: string;
+          id?: string;
+          name: string;
+          seats: number;
+          sort_order?: number;
+          store_id: string;
+        };
+        Update: {
+          active?: boolean;
+          area_id?: string;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          seats?: number;
+          sort_order?: number;
+          store_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "dining_tables_area_id_fkey";
+            columns: ["area_id"];
+            isOneToOne: false;
+            referencedRelation: "dining_areas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "dining_tables_store_id_fkey";
+            columns: ["store_id"];
+            isOneToOne: false;
+            referencedRelation: "stores";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       discount_approvals: {
         Row: {
           approved_by: string;
@@ -167,6 +252,137 @@ export type Database = {
             columns: ["store_id"];
             isOneToOne: false;
             referencedRelation: "stores";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      kitchen_ticket_items: {
+        Row: {
+          choices: string | null;
+          id: string;
+          name: string;
+          note: string | null;
+          quantity: number;
+          sort_order: number;
+          tab_item_id: string | null;
+          ticket_id: string;
+          voided: boolean;
+        };
+        ComputedFields: never;
+        Insert: {
+          choices?: string | null;
+          id?: string;
+          name: string;
+          note?: string | null;
+          quantity: number;
+          sort_order?: number;
+          tab_item_id?: string | null;
+          ticket_id: string;
+          voided?: boolean;
+        };
+        Update: {
+          choices?: string | null;
+          id?: string;
+          name?: string;
+          note?: string | null;
+          quantity?: number;
+          sort_order?: number;
+          tab_item_id?: string | null;
+          ticket_id?: string;
+          voided?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "kitchen_ticket_items_tab_item_id_fkey";
+            columns: ["tab_item_id"];
+            isOneToOne: false;
+            referencedRelation: "tab_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "kitchen_ticket_items_ticket_id_fkey";
+            columns: ["ticket_id"];
+            isOneToOne: false;
+            referencedRelation: "kitchen_tickets";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      kitchen_tickets: {
+        Row: {
+          done_at: string | null;
+          done_by: string | null;
+          id: string;
+          label: string;
+          number: number;
+          order_id: string | null;
+          sent_at: string;
+          sent_by: string;
+          store_id: string;
+          tab_id: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          done_at?: string | null;
+          done_by?: string | null;
+          id?: string;
+          label: string;
+          number: number;
+          order_id?: string | null;
+          sent_at?: string;
+          sent_by: string;
+          store_id: string;
+          tab_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          done_at?: string | null;
+          done_by?: string | null;
+          id?: string;
+          label?: string;
+          number?: number;
+          order_id?: string | null;
+          sent_at?: string;
+          sent_by?: string;
+          store_id?: string;
+          tab_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "kitchen_tickets_done_by_fkey";
+            columns: ["done_by"];
+            isOneToOne: false;
+            referencedRelation: "staff";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "kitchen_tickets_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "kitchen_tickets_sent_by_fkey";
+            columns: ["sent_by"];
+            isOneToOne: false;
+            referencedRelation: "staff";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "kitchen_tickets_store_id_fkey";
+            columns: ["store_id"];
+            isOneToOne: false;
+            referencedRelation: "stores";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "kitchen_tickets_tab_id_fkey";
+            columns: ["tab_id"];
+            isOneToOne: false;
+            referencedRelation: "tabs";
             referencedColumns: ["id"];
           },
         ];
@@ -300,6 +516,7 @@ export type Database = {
           order_id: string;
           quantity: number;
           sku: string;
+          tab_item_id: string | null;
           tax: number;
           tax_rate_bps: number;
           unit_price: number;
@@ -318,6 +535,7 @@ export type Database = {
           order_id: string;
           quantity: number;
           sku: string;
+          tab_item_id?: string | null;
           tax: number;
           tax_rate_bps: number;
           unit_price: number;
@@ -335,6 +553,7 @@ export type Database = {
           order_id?: string;
           quantity?: number;
           sku?: string;
+          tab_item_id?: string | null;
           tax?: number;
           tax_rate_bps?: number;
           unit_price?: number;
@@ -346,6 +565,13 @@ export type Database = {
             columns: ["order_id"];
             isOneToOne: false;
             referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_items_tab_item_id_fkey";
+            columns: ["tab_item_id"];
+            isOneToOne: false;
+            referencedRelation: "tab_items";
             referencedColumns: ["id"];
           },
           {
@@ -373,6 +599,7 @@ export type Database = {
           status: Database["public"]["Enums"]["order_status"];
           store_id: string;
           subtotal: number;
+          tab_id: string | null;
           tax_total: number;
           tip: number;
           total: number;
@@ -396,6 +623,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"];
           store_id: string;
           subtotal: number;
+          tab_id?: string | null;
           tax_total: number;
           tip?: number;
           total: number;
@@ -418,6 +646,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"];
           store_id?: string;
           subtotal?: number;
+          tab_id?: string | null;
           tax_total?: number;
           tip?: number;
           total?: number;
@@ -473,6 +702,13 @@ export type Database = {
             columns: ["store_id"];
             isOneToOne: false;
             referencedRelation: "stores";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "orders_tab_id_fkey";
+            columns: ["tab_id"];
+            isOneToOne: false;
+            referencedRelation: "tabs";
             referencedColumns: ["id"];
           },
           {
@@ -1183,6 +1419,7 @@ export type Database = {
           id: string;
           max_cashier_discount_bps: number;
           name: string;
+          next_ticket_number: number;
           prices_include_tax: boolean;
           receipt_footer: string | null;
           timezone: string;
@@ -1195,6 +1432,7 @@ export type Database = {
           id?: string;
           max_cashier_discount_bps?: number;
           name: string;
+          next_ticket_number?: number;
           prices_include_tax?: boolean;
           receipt_footer?: string | null;
           timezone?: string;
@@ -1206,11 +1444,158 @@ export type Database = {
           id?: string;
           max_cashier_discount_bps?: number;
           name?: string;
+          next_ticket_number?: number;
           prices_include_tax?: boolean;
           receipt_footer?: string | null;
           timezone?: string;
         };
         Relationships: [];
+      };
+      tab_items: {
+        Row: {
+          added_at: string;
+          added_by: string;
+          id: string;
+          name: string;
+          note: string | null;
+          option_ids: string[];
+          paid_quantity: number;
+          quantity: number;
+          sent_at: string | null;
+          tab_id: string;
+          variant_id: string | null;
+          void_reason: string | null;
+          voided_at: string | null;
+          voided_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          added_at?: string;
+          added_by: string;
+          id?: string;
+          name: string;
+          note?: string | null;
+          option_ids?: string[];
+          paid_quantity?: number;
+          quantity: number;
+          sent_at?: string | null;
+          tab_id: string;
+          variant_id?: string | null;
+          void_reason?: string | null;
+          voided_at?: string | null;
+          voided_by?: string | null;
+        };
+        Update: {
+          added_at?: string;
+          added_by?: string;
+          id?: string;
+          name?: string;
+          note?: string | null;
+          option_ids?: string[];
+          paid_quantity?: number;
+          quantity?: number;
+          sent_at?: string | null;
+          tab_id?: string;
+          variant_id?: string | null;
+          void_reason?: string | null;
+          voided_at?: string | null;
+          voided_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tab_items_added_by_fkey";
+            columns: ["added_by"];
+            isOneToOne: false;
+            referencedRelation: "staff";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tab_items_tab_id_fkey";
+            columns: ["tab_id"];
+            isOneToOne: false;
+            referencedRelation: "tabs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tab_items_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tab_items_voided_by_fkey";
+            columns: ["voided_by"];
+            isOneToOne: false;
+            referencedRelation: "staff";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tabs: {
+        Row: {
+          bill_printed_at: string | null;
+          closed_at: string | null;
+          guests: number | null;
+          id: string;
+          name: string | null;
+          opened_at: string;
+          opened_by: string;
+          status: Database["public"]["Enums"]["tab_status"];
+          store_id: string;
+          table_id: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          bill_printed_at?: string | null;
+          closed_at?: string | null;
+          guests?: number | null;
+          id?: string;
+          name?: string | null;
+          opened_at?: string;
+          opened_by: string;
+          status?: Database["public"]["Enums"]["tab_status"];
+          store_id: string;
+          table_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          bill_printed_at?: string | null;
+          closed_at?: string | null;
+          guests?: number | null;
+          id?: string;
+          name?: string | null;
+          opened_at?: string;
+          opened_by?: string;
+          status?: Database["public"]["Enums"]["tab_status"];
+          store_id?: string;
+          table_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tabs_opened_by_fkey";
+            columns: ["opened_by"];
+            isOneToOne: false;
+            referencedRelation: "staff";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tabs_store_id_fkey";
+            columns: ["store_id"];
+            isOneToOne: false;
+            referencedRelation: "stores";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tabs_table_id_fkey";
+            columns: ["table_id"];
+            isOneToOne: false;
+            referencedRelation: "dining_tables";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       tax_classes: {
         Row: {
@@ -1282,6 +1667,15 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      add_tab_items: {
+        Args: { p_items: Json; p_tab_id: string };
+        Returns: undefined;
+      };
+      cancel_tab: { Args: { p_tab_id: string }; Returns: undefined };
+      change_tab_item: {
+        Args: { p_item_id: string; p_quantity: number };
+        Returns: undefined;
+      };
       close_register: {
         Args: { p_counted_cash: number; p_note?: string; p_session_id: string };
         Returns: Json;
@@ -1304,6 +1698,7 @@ export type Database = {
         Args: {
           p_approval_id?: string;
           p_customer_id?: string;
+          p_kitchen?: boolean;
           p_lines: Json;
           p_order_discount?: Json;
           p_order_name?: string;
@@ -1325,14 +1720,47 @@ export type Database = {
         };
         Returns: Json;
       };
+      finish_ticket: { Args: { p_ticket_id: string }; Returns: undefined };
       import_catalog: {
         Args: { p_rows: Json; p_store_id: string };
         Returns: number;
+      };
+      move_tab: {
+        Args: { p_tab_id: string; p_table_id: string };
+        Returns: undefined;
+      };
+      note_tab_item: {
+        Args: { p_item_id: string; p_note?: string };
+        Returns: undefined;
       };
       open_register: {
         Args: { p_opening_cash: number; p_register_id: string };
         Returns: string;
       };
+      open_tab: {
+        Args: {
+          p_guests?: number;
+          p_name?: string;
+          p_store_id: string;
+          p_table_id?: string;
+        };
+        Returns: string;
+      };
+      pay_tab: {
+        Args: {
+          p_approval_id?: string;
+          p_customer_id?: string;
+          p_order_discount?: Json;
+          p_parts: Json;
+          p_payments?: Json;
+          p_session_id: string;
+          p_tab_id: string;
+          p_tip?: number;
+        };
+        Returns: Json;
+      };
+      print_bill: { Args: { p_tab_id: string }; Returns: undefined };
+      recall_ticket: { Args: { p_store_id: string }; Returns: string };
       record_stock_count: {
         Args: {
           p_counted: number;
@@ -1415,6 +1843,7 @@ export type Database = {
         Args: { p_product: Json; p_store_id: string; p_variants: Json };
         Returns: string;
       };
+      send_tab: { Args: { p_tab_id: string }; Returns: string };
       set_default_tax_class: { Args: { p_id: string }; Returns: undefined };
       set_staff_access: {
         Args: {
@@ -1436,8 +1865,16 @@ export type Database = {
         };
         Returns: string;
       };
+      update_tab: {
+        Args: { p_guests?: number; p_name?: string; p_tab_id: string };
+        Returns: undefined;
+      };
       void_order: {
         Args: { p_order_id: string; p_reason: string };
+        Returns: undefined;
+      };
+      void_tab_item: {
+        Args: { p_item_id: string; p_reason: string };
         Returns: undefined;
       };
     };
@@ -1454,6 +1891,7 @@ export type Database = {
         | "sold"
         | "returned"
         | "correction";
+      tab_status: "open" | "paid" | "cancelled";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -1600,6 +2038,7 @@ export const Constants = {
         "returned",
         "correction",
       ],
+      tab_status: ["open", "paid", "cancelled"],
     },
   },
 } as const;
