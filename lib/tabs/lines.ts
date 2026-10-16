@@ -1,4 +1,5 @@
 import { priceCart } from "@/lib/checkout";
+import { selectionFromIds, selectionLabel } from "@/lib/modifiers";
 import { cartInputs, cartLineFor, type CartLine, type Discount, type RegisterProduct } from "@/lib/register/cart";
 
 export type TabLine = {
@@ -112,4 +113,24 @@ export function tabTotal(lines: TabLine[], products: RegisterProduct[], pricesIn
 export function tabLabel(tableName: string | null, name: string | null): string {
   if (tableName && name) return `${tableName} · ${name}`;
   return tableName ?? name ?? "Tab";
+}
+
+function find(line: TabLine, products: RegisterProduct[]) {
+  const product = products.find((entry) => entry.variants.some((variant) => variant.id === line.variantId));
+  const variant = product?.variants.find((entry) => entry.id === line.variantId);
+  return product && variant ? { product, variant } : null;
+}
+
+export function lineChoices(line: TabLine, products: RegisterProduct[]): string {
+  const found = find(line, products);
+  return found ? selectionLabel(found.product.modifierGroups, selectionFromIds(found.product.modifierGroups, line.optionIds)) : "";
+}
+
+export function lineUnitPrice(line: TabLine, products: RegisterProduct[]): number | null {
+  const found = find(line, products);
+  return found ? cartLineFor(found.product, found.variant, line.optionIds, 1, line.id).price : null;
+}
+
+export function unsentCount(lines: TabLine[]): number {
+  return lines.filter((line) => line.sentAt === null).reduce((sum, line) => sum + line.quantity, 0);
 }

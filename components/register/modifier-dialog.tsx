@@ -13,9 +13,10 @@ type ModifierDialogProps = {
   money: (minor: number) => string;
   onDone: (target: ModifierTarget, selection: Selection) => void;
   onClose: () => void;
+  addLabel?: string;
 };
 
-function ModifierForm({ target, money, onDone }: { target: ModifierTarget; money: (minor: number) => string; onDone: ModifierDialogProps["onDone"] }) {
+function ModifierForm({ target, money, onDone, addLabel }: { target: ModifierTarget; money: (minor: number) => string; onDone: ModifierDialogProps["onDone"]; addLabel: string }) {
   const [selection, setSelection] = useState<Selection>(target.selection);
   const groups = target.product.modifierGroups;
   const label = variantLabel(target.product, target.variant);
@@ -65,14 +66,14 @@ function ModifierForm({ target, money, onDone }: { target: ModifierTarget; money
       {problem && <span role="status" className="caption-style text-soft">{problem}.</span>}
       <DialogFooter>
         <Button variant="primary" size="md" className="min-h-11" disabled={problem !== null} onClick={() => onDone(target, selection)}>
-          {target.editKey ? "Save choices" : "Add to sale"}
+          {target.editKey ? "Save choices" : addLabel}
         </Button>
       </DialogFooter>
     </div>
   );
 }
 
-export default function ModifierDialog({ target, money, onDone, onClose }: ModifierDialogProps) {
+export default function ModifierDialog({ target, money, onDone, onClose, addLabel = "Add to sale" }: ModifierDialogProps) {
   const open = target !== null;
   const [prevOpen, setPrevOpen] = useState(open);
   const [openCount, setOpenCount] = useState(0);
@@ -82,7 +83,7 @@ export default function ModifierDialog({ target, money, onDone, onClose }: Modif
   }
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-w-[32em]">{target && <ModifierForm key={openCount} target={target} money={money} onDone={onDone} />}</DialogContent>
+      <DialogContent className="max-w-[32em]">{target && <ModifierForm key={openCount} target={target} money={money} onDone={onDone} addLabel={addLabel} />}</DialogContent>
     </Dialog>
   );
 }

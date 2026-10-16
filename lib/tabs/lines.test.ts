@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RegisterProduct } from "@/lib/register/cart";
-import { leftToPay, partsFrom, pickAll, setPick, tabCartLines, tabLabel, tabTotal, toTabLine, type TabLine } from "./lines";
+import { leftToPay, lineChoices, lineUnitPrice, partsFrom, pickAll, setPick, tabCartLines, tabLabel, tabTotal, toTabLine, unsentCount, type TabLine } from "./lines";
 
 const latte: RegisterProduct = {
   id: "p-latte",
@@ -73,5 +73,17 @@ describe("tab lines", () => {
     expect(tabLabel("P1", null)).toBe("P1");
     expect(tabLabel(null, "Sam")).toBe("Sam");
     expect(tabLabel("P1", "Sam")).toBe("P1 · Sam");
+  });
+});
+
+describe("showing a tab line", () => {
+  it("names its choices and prices it from the catalog", () => {
+    const latteLine = line({ id: "a", variantId: "v-latte", optionIds: ["o-oat"], name: "Latte", quantity: 2 });
+    expect(lineChoices(latteLine, [latte, beer])).toBe("Oat");
+    expect(lineUnitPrice(latteLine, [latte, beer])).toBe(470);
+    expect(lineUnitPrice(line({ variantId: null }), [latte, beer])).toBeNull();
+  });
+  it("counts unsent lines", () => {
+    expect(unsentCount([line({ sentAt: null, quantity: 2 }), line({ sentAt: null, quantity: 1 }), line({})])).toBe(3);
   });
 });
