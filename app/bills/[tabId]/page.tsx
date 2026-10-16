@@ -8,7 +8,7 @@ import { priceCart } from "@/lib/checkout";
 import { formatMoney } from "@/lib/money";
 import { cartInputs } from "@/lib/register/cart";
 import { loadRegisterCatalog } from "@/lib/register/queries";
-import { pickAll, tabCartLines } from "@/lib/tabs/lines";
+import { alreadyPaid, leftToPay, pickAll, tabCartLines, unavailableLines } from "@/lib/tabs/lines";
 import { loadTab } from "@/lib/tabs/queries";
 
 export const metadata: Metadata = { title: "Bill" };
@@ -29,7 +29,8 @@ export default async function BillPage({ params, searchParams }: { params: Promi
   const money = (minor: number) => formatMoney(minor, store.currency, "en-US");
   const { lines } = tabCartLines(tab.lines, products, pickAll(tab.lines), {});
   const priced = lines.length > 0 ? priceCart(cartInputs(lines), null, store.pricesIncludeTax) : null;
-  const paid = tab.sales.filter((sale) => sale.status !== "voided").reduce((sum, sale) => sum + sale.total, 0);
+  const paid = alreadyPaid(tab.sales);
+  const unavailable = unavailableLines(tab.lines, products);
   const now = new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short", timeZone: storeRow?.timezone ?? "UTC" }).format(new Date());
 
   return (
@@ -52,6 +53,15 @@ export default async function BillPage({ params, searchParams }: { params: Promi
             </li>
           ))}
         </ul>
+        {unavailable.length > 0 && (
+          <ul className="flex flex-col gap-1">
+            {unavailable.map((line) => (
+              <li key={line.id}>
+                {leftToPay(line)} × {line.name} · not for sale any more, ask staff
+              </li>
+            ))}
+          </ul>
+        )}
         <dl className="flex flex-col gap-1 border-t border-dashed border-current pt-2 tabular-nums">
           <div className="flex justify-between"><dt>Subtotal</dt><dd>{money(priced?.subtotal ?? 0)}</dd></div>
           <div className="flex justify-between"><dt>{store.pricesIncludeTax ? "Includes tax" : "Tax"}</dt><dd>{money(priced?.taxTotal ?? 0)}</dd></div>

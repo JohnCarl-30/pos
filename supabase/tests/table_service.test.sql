@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(54);
+select plan(55);
 
 truncate table public.business, public.stores, public.staff, public.tax_classes,
   public.categories, public.products, public.customers restart identity cascade;
@@ -9,7 +9,8 @@ truncate table public.modifier_groups cascade;
 insert into auth.users (id, email, aud, role) values
   ('00000000-0000-0000-0000-0000000000a2', 'ts-manager@test', 'authenticated', 'authenticated'),
   ('00000000-0000-0000-0000-0000000000a3', 'ts-cashier@test', 'authenticated', 'authenticated'),
-  ('00000000-0000-0000-0000-0000000000a4', 'ts-other@test', 'authenticated', 'authenticated');
+  ('00000000-0000-0000-0000-0000000000a4', 'ts-other@test', 'authenticated', 'authenticated'),
+  ('00000000-0000-0000-0000-0000000000a5', 'ts-owner@test', 'authenticated', 'authenticated');
 insert into public.business (name, setup_completed_at) values ('Test Shop', now());
 insert into public.stores (id, name, currency, prices_include_tax, timezone) values
   ('00000000-0000-0000-0000-0000000000b1', 'Store A', 'USD', false, 'UTC'),
@@ -17,14 +18,18 @@ insert into public.stores (id, name, currency, prices_include_tax, timezone) val
 insert into public.staff (id, user_id, name, email, role, active) values
   ('00000000-0000-0000-0000-0000000000c2', '00000000-0000-0000-0000-0000000000a2', 'Manager', 'ts-manager@test', 'manager', true),
   ('00000000-0000-0000-0000-0000000000c3', '00000000-0000-0000-0000-0000000000a3', 'Cashier', 'ts-cashier@test', 'cashier', true),
-  ('00000000-0000-0000-0000-0000000000c4', '00000000-0000-0000-0000-0000000000a4', 'Other', 'ts-other@test', 'cashier', true);
+  ('00000000-0000-0000-0000-0000000000c4', '00000000-0000-0000-0000-0000000000a4', 'Other', 'ts-other@test', 'cashier', true),
+  ('00000000-0000-0000-0000-0000000000c5', '00000000-0000-0000-0000-0000000000a5', 'Owner', 'ts-owner@test', 'owner', true);
 insert into public.staff_stores (staff_id, store_id) values
   ('00000000-0000-0000-0000-0000000000c2', '00000000-0000-0000-0000-0000000000b1'),
   ('00000000-0000-0000-0000-0000000000c3', '00000000-0000-0000-0000-0000000000b1'),
   ('00000000-0000-0000-0000-0000000000c4', '00000000-0000-0000-0000-0000000000b2');
-insert into public.registers (id, store_id, name) values ('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000b1', 'Till 1');
+insert into public.registers (id, store_id, name) values
+  ('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000b1', 'Till 1'),
+  ('00000000-0000-0000-0000-0000000000d2', '00000000-0000-0000-0000-0000000000b2', 'Till B');
 insert into public.register_sessions (id, register_id, opened_by, opening_cash) values
-  ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000c3', 0);
+  ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000c3', 0),
+  ('00000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-0000000000d2', '00000000-0000-0000-0000-0000000000c5', 0);
 insert into public.tax_classes (id, name, is_default) values ('00000000-0000-0000-0000-0000000000e1', 'Standard', true);
 insert into public.tax_rates (store_id, tax_class_id, name, rate_bps) values ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000e1', 'Tax', 1000);
 insert into public.categories (id, name, kitchen) values
@@ -241,6 +246,13 @@ select public.void_order((select id from t where key = 'p2sale'), 'wrong table')
 select is(
   (select status::text || ' ' || coalesce(table_id::text, 'no table') || ' ' || name from public.tabs where id = (select id from t where key = 'p2')),
   'open no table P2', 'a reopened tab whose table is taken becomes a bar tab named after it'
+);
+
+set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000a5","role":"authenticated"}';
+select throws_ok(
+  format($$ select public.pay_tab(%L, '00000000-0000-0000-0000-000000000012', %L, null, null, null, '[{"method":"card","amount":880}]', 0) $$,
+    (select id from t where key = 'p1'), jsonb_build_array(jsonb_build_object('tab_item_id', (select id from t where key = 'soup'), 'quantity', 1))),
+  '22023', 'this till is in another store', 'a tab is paid only at a till in its store'
 );
 
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000a4","role":"authenticated"}';

@@ -35,6 +35,9 @@ function Line({ line, props }: { line: TabLine; props: TabLinesProps }) {
         </div>
         <span className="tabular-nums">{unit === null ? "—" : props.money(unit * line.quantity)}</span>
       </div>
+      {!voided && unit === null && line.paidQuantity < line.quantity && (
+        <span className="caption-style text-warning">No longer for sale. {sent ? "Void it" : "Remove it"} so the tab can be paid.</span>
+      )}
       {voided ? (
         <span className="caption-style text-danger">Voided · {line.voidReason}</span>
       ) : (

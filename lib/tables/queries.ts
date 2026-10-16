@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import type { RegisterProduct } from "@/lib/register/cart";
-import { leftToPay, tabTotal, toTabLine, TAB_LINE_SELECT, type TabLineRow } from "@/lib/tabs/lines";
+import { leftToPay, tabTotal, toTabLine, unavailableLines, TAB_LINE_SELECT, type TabLineRow } from "@/lib/tabs/lines";
 
 type Client = SupabaseClient<Database>;
 
@@ -18,6 +18,7 @@ export type FloorTab = {
   billPrinted: boolean;
   total: number;
   itemCount: number;
+  unavailable: number;
 };
 
 export async function loadAreas(supabase: Client, storeId: string): Promise<AreaWithTables[]> {
@@ -65,6 +66,7 @@ export async function loadOpenTabs(supabase: Client, storeId: string, products: 
       billPrinted: row.bill_printed_at !== null,
       total: tabTotal(lines, products, pricesIncludeTax),
       itemCount: lines.reduce((sum, line) => sum + leftToPay(line), 0),
+      unavailable: unavailableLines(lines, products).length,
     };
   });
 }

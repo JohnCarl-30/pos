@@ -143,3 +143,11 @@ export function clampPick(pick: PayPick, lines: TabLine[]): PayPick {
   }
   return next;
 }
+
+export function alreadyPaid(sales: { total: number; tip: number; refunded: number; status: string }[]): number {
+  return sales.filter((sale) => sale.status !== "voided").reduce((sum, sale) => sum + Math.max(0, sale.total - sale.refunded), 0);
+}
+
+export function unavailableLines(lines: TabLine[], products: RegisterProduct[]): TabLine[] {
+  return lines.filter((line) => leftToPay(line) > 0 && find(line, products) === null);
+}
