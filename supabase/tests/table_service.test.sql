@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(49);
+select plan(54);
 
 truncate table public.business, public.stores, public.staff, public.tax_classes,
   public.categories, public.products, public.customers restart identity cascade;
@@ -222,6 +222,26 @@ select throws_ok(
   '22023', 'this ticket is already done', 'a done ticket can''t finish again'
 );
 select is(public.recall_ticket('00000000-0000-0000-0000-0000000000b1'), (select id from t where key = 'ticket1'), 'recall brings back the last finished ticket');
+
+select lives_ok(
+  format($$ select public.void_order(%L, 'wrong card') $$, (select o.id from public.orders o join public.order_items oi on oi.order_id = o.id where o.tab_id = (select id from t where key = 'p1') and oi.variant_id = '00000000-0000-0000-0000-0000000000f6')),
+  'voids the sale that paid the soup'
+);
+select is((select status::text from public.tabs where id = (select id from t where key = 'p1')), 'open', 'voiding a tab sale reopens the tab');
+select is((select paid_quantity from public.tab_items where id = (select id from t where key = 'soup')), 0, 'the soup is unpaid again');
+select is((select table_id from public.tabs where id = (select id from t where key = 'p1')), '00000000-0000-0000-0000-000000000401'::uuid, 'a free table keeps its reopened tab');
+
+insert into t values ('p2', public.open_tab('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-000000000402', null, 2));
+select public.add_tab_items((select id from t where key = 'p2'), '[{"variant_id":"00000000-0000-0000-0000-0000000000f4","quantity":1}]');
+insert into t select 'p2sale', (public.pay_tab((select id from t where key = 'p2'), '00000000-0000-0000-0000-000000000011',
+  jsonb_build_array(jsonb_build_object('tab_item_id', (select id from public.tab_items where tab_id = (select id from t where key = 'p2')), 'quantity', 1)),
+  null, null, null, '[{"method":"card","amount":660}]', 0) ->> 'order_id')::uuid;
+insert into t values ('p2next', public.open_tab('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-000000000402', null, 4));
+select public.void_order((select id from t where key = 'p2sale'), 'wrong table');
+select is(
+  (select status::text || ' ' || coalesce(table_id::text, 'no table') || ' ' || name from public.tabs where id = (select id from t where key = 'p2')),
+  'open no table P2', 'a reopened tab whose table is taken becomes a bar tab named after it'
+);
 
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000a4","role":"authenticated"}';
 select is((select count(*) from public.tabs)::integer, 0, 'other stores'' tabs are hidden');

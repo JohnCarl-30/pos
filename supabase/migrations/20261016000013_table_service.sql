@@ -64,6 +64,8 @@ create index tab_items_variant_id_idx on public.tab_items (variant_id);
 
 alter table public.orders add column tab_id uuid references public.tabs (id);
 create index orders_tab_id_idx on public.orders (tab_id);
+alter table public.order_items add column tab_item_id uuid references public.tab_items (id) on delete set null;
+create index order_items_tab_item_id_idx on public.order_items (tab_item_id);
 
 create table public.kitchen_tickets (
   id uuid primary key default gen_random_uuid(),
@@ -997,11 +999,45 @@ begin
     where id = (v_part ->> 'tab_item_id')::uuid;
   end loop;
   update public.orders set tab_id = p_tab_id where id = (v_result ->> 'order_id')::uuid;
+  update public.order_items set tab_item_id = v_ids[line_number]
+  where order_id = (v_result ->> 'order_id')::uuid;
   update public.tabs set updated_at = now() where id = p_tab_id;
   v_done := private.settle_tab(p_tab_id);
   return v_result || jsonb_build_object('tab_paid', v_done);
 end;
 $$;
+
+create function private.reopen_voided_tab_sale()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_tab public.tabs;
+begin
+  select * into v_tab from public.tabs where id = new.tab_id for update;
+  update public.tab_items ti set paid_quantity = greatest(0, ti.paid_quantity - oi.quantity)
+  from public.order_items oi
+  where oi.order_id = new.id and oi.tab_item_id = ti.id;
+  if v_tab.status = 'paid' then
+    if v_tab.table_id is not null and exists (select 1 from public.tabs t where t.table_id = v_tab.table_id and t.status = 'open') then
+      update public.tabs set status = 'open', closed_at = null, table_id = null, name = left(coalesce(name, private.tab_label(v_tab)), 40), updated_at = now() where id = v_tab.id;
+    else
+      update public.tabs set status = 'open', closed_at = null, updated_at = now() where id = v_tab.id;
+    end if;
+  else
+    update public.tabs set updated_at = now() where id = v_tab.id;
+  end if;
+  return new;
+end;
+$$;
+revoke execute on function private.reopen_voided_tab_sale() from public, anon, authenticated;
+create trigger orders_reopen_voided_tab_sale
+  after update of status on public.orders
+  for each row
+  when (old.status <> 'voided' and new.status = 'voided' and new.tab_id is not null)
+  execute function private.reopen_voided_tab_sale();
 
 create function public.finish_ticket(p_ticket_id uuid)
 returns void

@@ -516,6 +516,7 @@ export type Database = {
           order_id: string;
           quantity: number;
           sku: string;
+          tab_item_id: string | null;
           tax: number;
           tax_rate_bps: number;
           unit_price: number;
@@ -534,6 +535,7 @@ export type Database = {
           order_id: string;
           quantity: number;
           sku: string;
+          tab_item_id?: string | null;
           tax: number;
           tax_rate_bps: number;
           unit_price: number;
@@ -551,6 +553,7 @@ export type Database = {
           order_id?: string;
           quantity?: number;
           sku?: string;
+          tab_item_id?: string | null;
           tax?: number;
           tax_rate_bps?: number;
           unit_price?: number;
@@ -562,6 +565,13 @@ export type Database = {
             columns: ["order_id"];
             isOneToOne: false;
             referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_items_tab_item_id_fkey";
+            columns: ["tab_item_id"];
+            isOneToOne: false;
+            referencedRelation: "tab_items";
             referencedColumns: ["id"];
           },
           {

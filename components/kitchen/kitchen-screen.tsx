@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/_ui/button";
 import { Checkbox } from "@/components/_ui/checkbox";
@@ -15,12 +15,30 @@ import type { KitchenTicket } from "@/lib/kitchen/queries";
 
 const CHIME = "pos-kitchen-chime";
 
+const listeners = new Set<() => void>();
+
 function readChime(): boolean {
   try {
     return window.localStorage.getItem(CHIME) === "1";
   } catch {
     return false;
   }
+}
+
+function writeChime(on: boolean) {
+  try {
+    window.localStorage.setItem(CHIME, on ? "1" : "0");
+  } catch {}
+  listeners.forEach((listener) => listener());
+}
+
+function subscribeChime(callback: () => void) {
+  listeners.add(callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    listeners.delete(callback);
+    window.removeEventListener("storage", callback);
+  };
 }
 
 type KitchenScreenProps = { storeId: string; storeName: string; timeZone: string; tickets: KitchenTicket[] };
@@ -31,7 +49,8 @@ export default function KitchenScreen({ storeId, storeName, timeZone, tickets }:
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [notice, setNotice] = useState<string | null>(null);
-  const [chime, setChime] = useState(readChime);
+  const chime = useSyncExternalStore(subscribeChime, readChime, () => false);
+  const [audioReady, setAudioReady] = useState(false);
   const audio = useRef<AudioContext | null>(null);
   const seen = useRef<Set<string>>(new Set(tickets.map((ticket) => ticket.id)));
   const time = (iso: string) => new Intl.DateTimeFormat("en", { timeStyle: "short", timeZone }).format(new Date(iso));
@@ -51,12 +70,18 @@ export default function KitchenScreen({ storeId, storeName, timeZone, tickets }:
     tone.stop(context.currentTime + 0.4);
   }, [tickets, chime]);
 
+  function wake() {
+    if (!audio.current) {
+      audio.current = new AudioContext();
+      setAudioReady(true);
+    } else if (audio.current.state === "suspended") {
+      void audio.current.resume();
+    }
+  }
+
   function changeChime(next: boolean) {
-    setChime(next);
-    if (next && !audio.current) audio.current = new AudioContext();
-    try {
-      window.localStorage.setItem(CHIME, next ? "1" : "0");
-    } catch {}
+    writeChime(next);
+    if (next) wake();
   }
 
   function run(action: () => Promise<{ ok: true } | { ok: false; error: string }>) {
@@ -69,7 +94,7 @@ export default function KitchenScreen({ storeId, storeName, timeZone, tickets }:
   }
 
   return (
-    <section id="kitchen" className="flex min-h-0 min-w-0 flex-1 flex-col">
+    <section id="kitchen" className="flex min-h-0 min-w-0 flex-1 flex-col" onPointerDown={chime && !audioReady ? wake : undefined}>
       <PageHeader
         title={`Kitchen · ${storeName}`}
         actions={
@@ -82,6 +107,7 @@ export default function KitchenScreen({ storeId, storeName, timeZone, tickets }:
           </>
         }
       />
+      {chime && !audioReady && <span role="status" className="caption-style text-warning px-4 pt-3">Tap anywhere to turn on the chime.</span>}
       {notice && <span role="alert" className="caption-style text-danger px-4 pt-3">{notice}</span>}
       <ScrollArea className="min-h-0 flex-1">
         {tickets.length === 0 ? (

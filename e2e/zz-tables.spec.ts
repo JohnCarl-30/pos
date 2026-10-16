@@ -136,3 +136,15 @@ test("the kitchen finishes and recalls a ticket, and sees counter sales", async 
   await page.getByRole("button", { name: "Recall" }).click();
   await expect(page.getByRole("article", { name: /G1/ })).toBeVisible();
 });
+
+test("the kitchen chime stays on after a reload and asks for a tap to sound", async ({ page }) => {
+  await signIn(page, "cashier@demo.test");
+  await page.waitForURL((url) => !url.pathname.startsWith("/login"));
+  await page.goto("/kitchen");
+  await page.getByRole("checkbox", { name: "Chime on new ticket" }).click();
+  await page.reload();
+  await expect(page.getByRole("checkbox", { name: "Chime on new ticket" })).toBeChecked();
+  await expect(page.getByText("Tap anywhere to turn on the chime.")).toBeVisible();
+  await page.getByRole("heading", { level: 1 }).click();
+  await expect(page.getByText("Tap anywhere to turn on the chime.")).toBeHidden();
+});
