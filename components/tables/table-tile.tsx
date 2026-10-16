@@ -29,7 +29,7 @@ export default function TableTile({ label, seats, tab, now, money, onOpen }: Tab
     <Link
       href={`/tabs/${tab.id}`}
       aria-label={`${label}, ${tab.itemCount} items, ${money(tab.total)}${tab.billPrinted ? ", bill printed" : ""}`}
-      className={cn(TILE, "bg-primary/15 hover:bg-primary/25 transition-colors duration-150", tab.billPrinted && "ring-primary ring-2")}
+      className={cn(TILE, tab.unavailable > 0 && "h-auto min-h-28", "bg-primary/15 hover:bg-primary/25 transition-colors duration-150", tab.billPrinted && "ring-primary ring-2")}
     >
       <span className="flex w-full items-center justify-between gap-2">
         <span className="lead-style truncate">{label}</span>
@@ -39,6 +39,7 @@ export default function TableTile({ label, seats, tab, now, money, onOpen }: Tab
       <span className="caption-style text-soft w-full truncate tabular-nums">
         {[tab.guests ? `${tab.guests} guests` : null, minutes === null ? null : `${minutes} min`, tab.openedBy.split(" ")[0] || null].filter(Boolean).join(" · ")}
       </span>
+      {tab.unavailable > 0 && <span className="caption-style text-warning">{tab.unavailable === 1 ? "1 item" : `${tab.unavailable} items`} no longer for sale</span>}
     </Link>
   );
 }

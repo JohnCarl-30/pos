@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RegisterProduct } from "@/lib/register/cart";
-import { clampPick, leftToPay, lineChoices, lineUnitPrice, partsFrom, pickAll, setPick, tabCartLines, tabLabel, tabTotal, toTabLine, unsentCount, type TabLine } from "./lines";
+import { alreadyPaid, clampPick, leftToPay, unavailableLines, lineChoices, lineUnitPrice, partsFrom, pickAll, setPick, tabCartLines, tabLabel, tabTotal, toTabLine, unsentCount, type TabLine } from "./lines";
 
 const latte: RegisterProduct = {
   id: "p-latte",
@@ -92,5 +92,30 @@ describe("clampPick", () => {
   it("drops what was paid since the pick was made", () => {
     const lines = [line({ id: "a", quantity: 3, paidQuantity: 2 }), line({ id: "b", voidedAt: "x", voidReason: "spilled" })];
     expect(clampPick({ a: 3, b: 1, gone: 2 }, lines)).toEqual({ a: 1 });
+  });
+});
+
+describe("alreadyPaid", () => {
+  it("counts kept sales net of refunds, without tips", () => {
+    expect(
+      alreadyPaid([
+        { total: 1000, tip: 100, refunded: 0, status: "completed" },
+        { total: 500, tip: 0, refunded: 200, status: "partially_refunded" },
+        { total: 300, tip: 0, refunded: 300, status: "refunded" },
+        { total: 900, tip: 0, refunded: 0, status: "voided" },
+      ]),
+    ).toBe(1300);
+  });
+});
+
+describe("unavailableLines", () => {
+  it("finds unpaid lines that are no longer for sale", () => {
+    const lines = [
+      line({ id: "gone", variantId: null, name: "Old pie" }),
+      line({ id: "gone-paid", variantId: null, name: "Old cake", quantity: 1, paidQuantity: 1 }),
+      line({ id: "gone-voided", variantId: null, name: "Old tart", voidedAt: "x", voidReason: "sent back" }),
+      line({ id: "beer" }),
+    ];
+    expect(unavailableLines(lines, [beer]).map((entry) => entry.name)).toEqual(["Old pie"]);
   });
 });
