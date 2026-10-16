@@ -241,7 +241,7 @@ export default function RegisterScreen(props: RegisterScreenProps) {
           kitchen={done.kitchen}
           change={done.change}
           money={money}
-          tab={props.tab ? { paid: done.tabPaid === true } : null}
+          tab={done.tabPaid === null ? null : { paid: done.tabPaid }}
           onNewSale={() => {
             setDone(null);
             if (props.tab) setPickState(pickAll(props.tab.lines));
