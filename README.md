@@ -1,8 +1,32 @@
 # POS
 
+[![CI](https://github.com/JohnCarl-30/pos/actions/workflows/ci.yml/badge.svg)](https://github.com/JohnCarl-30/pos/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A free, open-source point of sale for shops, cafés and restaurants. Self-host it with your own Supabase database: your sales data stays yours.
 
-> Status: foundation. Staff sign-in, setup, roles, stores, tax and staff settings work today. Checkout, products, orders and reports are being built next.
+![The register](docs/screenshots/register.png)
+
+## What it does
+
+- **Register:** fast touch till with search and barcode scanning, discounts with manager approval, cash, card and split payments, tips, and 80mm receipts from any printer.
+- **Products and stock:** variants, modifiers ("oat milk +$0.50"), stock history per store, low-stock alerts, and CSV import and export.
+- **Restaurants and bars:** tables by area, open tabs from servers' phones, a live kitchen screen, and bills split by item, evenly, or by any amount.
+- **Orders and customers:** searchable sales, refunds item by item, voids, and customer history.
+- **Reports:** sales, best sellers, staff and cash-ups per store, with CSV export.
+- **Several stores, one business,** with owner, manager and cashier roles enforced in the database.
+
+| Tables on a phone | Kitchen screen |
+| --- | --- |
+| <img src="docs/screenshots/tables-phone.png" alt="Tables on a phone" width="260"> | <img src="docs/screenshots/kitchen.png" alt="Kitchen screen" width="560"> |
+
+| A tab | Reports |
+| --- | --- |
+| <img src="docs/screenshots/tab.png" alt="A table's tab" width="420"> | <img src="docs/screenshots/reports.png" alt="Reports" width="420"> |
+
+Card payments are recorded, not charged: use your existing card terminal. The app needs an internet connection; there's no offline mode yet.
+
+Want to help? Read [CONTRIBUTING.md](CONTRIBUTING.md). Found a security problem? See [SECURITY.md](SECURITY.md).
 
 ## Quick start
 
@@ -23,6 +47,20 @@ Open http://localhost:3000 and sign in with a demo account (password `password`)
 | manager@demo.test | Manager — products, stock, refunds, reports |
 | cashier@demo.test | Cashier — sell, orders, customers |
 | inactive@demo.test | Deactivated — shows the no-access message |
+
+### What each account sees
+
+Each role gets a different sidebar, and the database enforces the same limits, so hiding a link is never the only protection.
+
+| Owner | Manager |
+| --- | --- |
+| <img src="docs/screenshots/role-owner.png" alt="Owner: Settings with staff, stores and tax" width="420"> | <img src="docs/screenshots/role-manager.png" alt="Manager: Products" width="420"> |
+| Every store, plus **Settings**: stores, tax rates and staff accounts. | Products, stock, modifiers, reports and refund approvals for their stores. |
+
+| Cashier | Deactivated |
+| --- | --- |
+| <img src="docs/screenshots/role-cashier.png" alt="Cashier: the register" width="420"> | <img src="docs/screenshots/role-inactive.png" alt="Deactivated account: no access" width="420"> |
+| Register, tables, kitchen, orders and customers. Discounts over the store's limit and refunds need a manager to approve on the till. | Can't sign in, and sees why. |
 
 To try the first-run setup instead, run `npx supabase db reset --no-seed` and open the app in a private window.
 
@@ -80,11 +118,12 @@ Refunds count on the day they happen, and voided sales never count, so a day's r
 | --- | --- |
 | `npm run dev` | Start the app |
 | `npm run lint` | Lint the code with ESLint |
-| `npm test` | Unit tests (money, tax, routing, validation) |
-| `npm run test:db` | Database tests: schema and access rules (pgTAP) |
+| `npm test` | Unit tests (money, tax, checkout and tab maths, validation) |
+| `npm run test:db` | Database tests: schema, access rules and every sale function (pgTAP) |
 | `npm run test:e2e` | End-to-end tests (resets the local database; run `npx playwright install chromium` once first) |
 | `npm run db:reset` | Rebuild the local database with demo data |
 | `npm run db:types` | Regenerate TypeScript types from the schema |
+| `npm run screenshots` | Reset the local database and retake the README screenshots with Playwright |
 
 ## Deploying
 
@@ -92,12 +131,13 @@ Refunds count on the day they happen, and voided sales never count, so a day's r
 2. In Supabase Auth settings, turn off "Allow new users to sign up". Staff accounts are created from Settings, never by public sign-up.
 3. Deploy the Next.js app anywhere that runs Node (Vercel works out of the box). Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SERVICE_ROLE_KEY`.
 4. Open the site. You'll be taken to setup to create your business, first store and owner account.
+5. Optional: under Tables → Set up tables, add areas and tables if you serve at tables. The live floor and kitchen screen use Supabase Realtime, which the migrations already turn on.
 
 > The first person to open a fresh deployment completes setup and becomes owner — finish setup immediately after deploying.
 
 ## How it's built
 
-Next.js 16, React 19, Tailwind 4 and Supabase (Postgres, Auth, row-level security). Roles are enforced in the database, not just the UI. Money is stored as whole cents. Read `CONVENTIONS.md` before contributing; `docs/superpowers/specs/` has the design docs.
+Next.js 16, React 19, Tailwind 4 and Supabase (Postgres, Auth, row-level security, Realtime). Roles are enforced in the database, not just the UI. Money is stored as whole cents, and every price, total and refund is calculated by database functions. See [CONTRIBUTING.md](CONTRIBUTING.md) for how the code is organised; `docs/superpowers/specs/` has the design doc for each feature.
 
 ## Notes
 

@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest something the POS should do
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the situation in your shop, café or restaurant, not the solution yet.
+      placeholder: "We seat the same table twice a night and need to…"
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+      description: How you imagine it working.
+  - type: textarea
+    id: today
+    attributes:
+      label: How do you handle it today?

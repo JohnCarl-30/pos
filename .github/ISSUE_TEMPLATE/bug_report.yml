@@ -1,0 +1,48 @@
+name: Bug report
+description: Something in the POS doesn't work the way it should
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+      placeholder: "I paid a tab split evenly between 3 people and the last payment was $0.01 short…"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Sign in as cashier@demo.test
+        2. Open Tables → T1
+        3. …
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Register / checkout
+        - Tables and tabs
+        - Kitchen screen
+        - Products and stock
+        - Orders, refunds and customers
+        - Reports
+        - Settings and staff
+        - Setup and deployment
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      placeholder: "iPad, Safari 18 · Windows, Chrome 141"
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or logs
+      description: Anything else that helps. Please remove customer names and other personal data.
