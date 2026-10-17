@@ -15,11 +15,11 @@ export default function TicketCard({ ticket, now, time, pending, onDone }: Ticke
   const minutes = now === null ? null : ticketMinutes(ticket.sentAt, now);
   const tone = minutes === null ? "normal" : ticketTone(minutes);
   return (
-    <Card role="article" aria-label={`Ticket ${ticket.number}, ${ticket.label}`} className={cn("flex flex-col gap-3", tone === "overdue" && "ring-danger ring-2")}>
+    <Card role="article" aria-label={`Ticket ${ticket.number}, ${ticket.label}`} className={cn("flex w-full flex-col gap-3", tone === "overdue" && "ring-danger ring-2")}>
       <header className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col">
           <span className="text-[24px] leading-none font-bold">{ticket.label}</span>
-          <span className="caption-style text-soft">#{ticket.number} · {time(ticket.sentAt)}</span>
+          <span className="caption-style text-soft">Ticket {ticket.number} · {time(ticket.sentAt)}</span>
         </div>
         <span className={cn("text-[20px] leading-none font-semibold tabular-nums", TONE[tone])}>{minutes === null ? "" : `${minutes}m`}</span>
       </header>
