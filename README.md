@@ -48,6 +48,20 @@ Open http://localhost:3000 and sign in with a demo account (password `password`)
 | cashier@demo.test | Cashier — sell, orders, customers |
 | inactive@demo.test | Deactivated — shows the no-access message |
 
+### What each account sees
+
+Each role gets a different sidebar, and the database enforces the same limits, so hiding a link is never the only protection.
+
+| Owner | Manager |
+| --- | --- |
+| <img src="docs/screenshots/role-owner.png" alt="Owner: Settings with staff, stores and tax" width="420"> | <img src="docs/screenshots/role-manager.png" alt="Manager: Products" width="420"> |
+| Every store, plus **Settings**: stores, tax rates and staff accounts. | Products, stock, modifiers, reports and refund approvals for their stores. |
+
+| Cashier | Deactivated |
+| --- | --- |
+| <img src="docs/screenshots/role-cashier.png" alt="Cashier: the register" width="420"> | <img src="docs/screenshots/role-inactive.png" alt="Deactivated account: no access" width="420"> |
+| Register, tables, kitchen, orders and customers. Discounts over the store's limit and refunds need a manager to approve on the till. | Can't sign in, and sees why. |
+
 To try the first-run setup instead, run `npx supabase db reset --no-seed` and open the app in a private window.
 
 ## Catalog & stock
@@ -109,6 +123,7 @@ Refunds count on the day they happen, and voided sales never count, so a day's r
 | `npm run test:e2e` | End-to-end tests (resets the local database; run `npx playwright install chromium` once first) |
 | `npm run db:reset` | Rebuild the local database with demo data |
 | `npm run db:types` | Regenerate TypeScript types from the schema |
+| `npm run screenshots` | Reset the local database and retake the README screenshots with Playwright |
 
 ## Deploying
 

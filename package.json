@@ -19,7 +19,8 @@
     "db:types": "supabase gen types typescript --local > lib/supabase/database.types.ts",
     "env:local": "bash scripts/env-local.sh",
     "db:vectors": "npx tsx scripts/checkout-vectors.mts",
-    "test:race": "bash scripts/race-void-close.sh"
+    "test:race": "bash scripts/race-void-close.sh",
+    "screenshots": "supabase db reset && playwright test -c playwright.screenshots.config.ts"
   },
   "dependencies": {
     "@rive-app/canvas": "^2.31.0",
